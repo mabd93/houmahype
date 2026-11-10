@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="color-scheme" content="dark">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:ital,wght@0,400;0,600;1,900&display=swap">
+<meta name="description" content="HoumaHype: a mobile arena that mixes sport and STEM thinking and measures the link between body and mind for high schools across the GCC and Egypt.">
+<title>HoumaHype: Kinetic STEM Infrastructure</title>
+<style>
+:root{--bg:#05070a;--panel:#0b111b;--line:#16222f;--ink:#e8f1f7;--mut:#8da0b0;--cy:#00aeef;--or:#f7941d;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+*{box-sizing:border-box}html{scroll-behavior:smooth;scroll-padding-top:70px;background:var(--bg)}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.6 "Segoe UI",system-ui,-apple-system,Roboto,Arial,sans-serif}
+a{color:inherit;text-decoration:none}
+.wrap{max-width:1080px;margin:0 auto;padding:0 20px}
+nav{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:rgba(5,7,10,.92);backdrop-filter:blur(8px);border-bottom:1px solid var(--line)}
+nav .wrap{display:flex;align-items:center;justify-content:space-between;height:56px}
+.logo{font-weight:800;letter-spacing:.04em}.logo b{color:var(--or)}
+nav .links{display:flex;gap:18px;font-size:14px;color:var(--mut);overflow-x:auto}
+nav .links a:hover{color:var(--cy)}
+.btn{display:inline-block;background:var(--or);color:#05070a;font-weight:700;padding:12px 22px;border-radius:10px;border:0;cursor:pointer;font-size:15px}
+.btn.alt{background:transparent;color:var(--cy);border:1px solid var(--cy)}
+.hero{padding:88px 0 64px;background:radial-gradient(60% 60% at 80% 10%,rgba(0,174,239,.16),transparent),radial-gradient(40% 50% at 10% 90%,rgba(247,148,29,.14),transparent)}
+.eyebrow{color:var(--cy);font-size:13px;letter-spacing:.18em;text-transform:uppercase}
+h1{font-size:clamp(34px,6vw,62px);line-height:1.05;margin:14px 0 18px}h1 em{font-style:normal;color:var(--or)}
+.lead{color:var(--mut);max-width:620px;font-size:18px}
+.cta{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px}
+.stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:14px;margin-top:48px}
+.stat{border:1px solid var(--line);background:var(--panel);border-radius:14px;padding:16px}
+.stat b{display:block;font-size:28px;color:var(--cy)}.stat span{color:var(--mut);font-size:13px}
+section{padding:64px 0}h2{font-size:clamp(26px,4vw,38px);margin:0 0 10px}.sub{color:var(--mut);max-width:640px;margin:0 0 32px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:22px}
+.card h3{margin:0 0 6px;font-size:18px}.card p{margin:0;color:var(--mut);font-size:15px}
+.num{display:inline-block;color:var(--or);font-weight:800;font-size:13px;letter-spacing:.12em;margin-bottom:8px}
+.tag{color:var(--cy);font-size:12px;letter-spacing:.1em;text-transform:uppercase}
+.split{display:grid;grid-template-columns:1.1fr .9fr;gap:36px;align-items:center}
+@media(max-width:760px){.split{grid-template-columns:1fr}nav .links{display:none}}
+.phone{width:290px;max-width:100%;margin:0 auto;border:2px solid var(--cy);border-radius:34px;padding:14px;background:#080c14;box-shadow:0 0 40px rgba(0,174,239,.15)}
+.screen{min-height:380px;border-radius:22px;background:var(--bg);padding:16px;display:flex;flex-direction:column;gap:10px}
+.orb{width:110px;height:110px;margin:6px auto;border-radius:50%;background:radial-gradient(circle at 35% 30%,#ffd08a,var(--or) 55%,#7a3d00);box-shadow:0 0 40px rgba(247,148,29,.6);animation:p 2.4s ease-in-out infinite}
+@keyframes p{50%{transform:scale(1.07)}}
+.big{font-size:24px;font-weight:800;text-align:center}.big small{display:block;font-size:11px;color:var(--mut);letter-spacing:.14em}
+.row{display:flex;justify-content:space-between;font-size:14px;border-bottom:1px solid var(--line);padding:7px 0}.plus{color:var(--cy)}.minus{color:var(--or)}
+.tabs{display:flex;gap:6px;margin-top:12px}.tabs button{flex:1;background:var(--panel);color:var(--mut);border:1px solid var(--line);border-radius:10px;padding:8px 2px;font-size:12px;cursor:pointer}
+.tabs button.on{color:var(--cy);border-color:var(--cy)}
+.city{display:flex;justify-content:space-between;align-items:center}.city .st{font-size:12px;color:var(--mut)}
+form{display:grid;gap:12px;max-width:560px}
+label{font-size:13px;color:var(--mut);display:grid;gap:5px}
+input,select,textarea{background:var(--panel);border:1px solid var(--line);border-radius:10px;padding:12px;color:var(--ink);font:inherit}
+input:focus,select:focus,textarea:focus{outline:2px solid var(--cy)}
+#msg{color:var(--cy);font-size:14px;min-height:20px}
+footer{border-top:1px solid var(--line);padding:32px 0;color:var(--mut);font-size:14px;text-align:center}
+.phone{width:330px;padding:12px}
+.screen{min-height:560px;max-height:560px;overflow:auto;gap:10px;padding:14px;position:relative;font-size:14px}
+.italic{font-family:Inter,"Segoe UI",system-ui,sans-serif;font-style:italic;font-weight:900}
+.glass{background:rgba(255,255,255,.04);backdrop-filter:blur(15px);-webkit-backdrop-filter:blur(15px);border:1px solid rgba(0,174,239,.28);border-radius:16px;padding:12px}
+.top{display:flex;justify-content:space-between;align-items:center}
+.sync{font-size:18px;color:var(--mut);display:inline-block}.sync.spin{animation:sp 1s linear infinite;color:var(--cy)}.sync.ok{color:#2ee27a}
+@keyframes sp{to{transform:rotate(360deg)}}
+.who{display:flex;gap:10px;align-items:center}
+.av{width:38px;height:38px;border-radius:50%;background:linear-gradient(135deg,var(--or),var(--cy));display:grid;place-items:center;color:#05070a;font-weight:900}
+.pill{margin-left:auto;border:1px solid var(--or);color:var(--or);border-radius:20px;padding:2px 10px;font-size:12px;white-space:nowrap}
+.hmw{background:var(--line);border-radius:8px;overflow:hidden}.hm{height:8px;border-radius:8px;background:linear-gradient(90deg,#00aeef,#f7941d)}
+.cap{font-size:11px;color:var(--mut);letter-spacing:.12em}
+.pills{display:flex;gap:6px}.pills button{flex:1;background:transparent;color:var(--mut);border:1px solid var(--line);border-radius:10px;padding:6px 0;font-size:12px;cursor:pointer}.pills button.on{color:var(--cy);border-color:var(--cy)}
+.orb{width:120px;height:120px;margin:8px auto;border-radius:50%;animation:p 2s ease-in-out infinite}
+.mini{display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:12px}.mini .glass{padding:10px}
+.btn2{flex:1;background:transparent;color:var(--cy);border:1px solid var(--cy);border-radius:10px;padding:8px;font-size:13px;cursor:pointer;position:relative;overflow:hidden}
+.rip{position:absolute;left:50%;top:50%;width:10px;height:10px;margin:-5px;border-radius:50%;border:2px solid var(--cy);animation:rp .8s ease-out forwards}
+@keyframes rp{to{transform:scale(14);opacity:0}}
+.vault{position:relative;height:160px;border-radius:14px;overflow:hidden;background:#0b111b;border:1px solid var(--line)}
+.door{position:absolute;top:0;bottom:0;width:50%;background:linear-gradient(#1c2733,#0f1720);border:2px solid var(--cy);transition:transform 1s;z-index:2}
+.door.l{left:0}.door.r{right:0}.open .door.l{transform:translateX(-100%)}.open .door.r{transform:translateX(100%)}
+.burst{position:absolute;inset:0;background:radial-gradient(circle,rgba(247,148,29,.9),transparent 65%);opacity:0;transition:opacity .6s}.open .burst{opacity:1}
+.loot{position:absolute;inset:0;display:flex;gap:6px;align-items:center;justify-content:center;opacity:0;transition:opacity .6s .5s;z-index:1}.open .loot{opacity:1}
+.lc{background:rgba(5,7,10,.7);border:1px solid var(--or);border-radius:8px;padding:8px 6px;font-size:11px;text-align:center}
+.flash{position:absolute;left:0;right:0;top:0;height:100%;background:#fff;opacity:0;animation:fl .7s ease-out forwards;pointer-events:none;z-index:3}
+@keyframes fl{0%{opacity:.9}100%{opacity:0}}
+.pt{position:absolute;left:50%;top:40%;width:6px;height:6px;border-radius:50%;background:var(--or);animation:pt 1s ease-out forwards;z-index:3}
+@keyframes pt{to{transform:translate(var(--x),var(--y));opacity:0}}
+.rk{display:flex;gap:8px;padding:5px 0;border-bottom:1px solid var(--line);font-size:13px}.rk b{width:28px;color:var(--or)}.rk span{margin-left:auto}
+.me{margin-top:auto;border:1px solid var(--cy);box-shadow:0 0 14px rgba(0,174,239,.4);border-radius:12px;padding:8px;text-align:center;font-size:12px}
+.hexb{cursor:pointer}.hexb:hover polygon{filter:brightness(1.3)}
+.vmodal{position:fixed;inset:0;background:rgba(0,0,0,.88);display:none;place-items:center;z-index:50;padding:16px}.vmodal.on{display:grid}.vbox{width:min(900px,100%)}.vbox iframe{width:100%;aspect-ratio:16/9;border:0;border-radius:12px;background:#000}.vbtn{flex:none;margin-top:12px;padding:8px 16px}.vbar{display:flex;justify-content:space-between;align-items:center;margin-top:10px;gap:12px}.vbar a{color:var(--cy);font-size:13px}
+html{background:var(--bg)}body{background:transparent!important}body::before{content:'';position:fixed;inset:0;z-index:-1;pointer-events:none;background:url("data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 width=%22320%22 height=%22320%22 opacity=%220.10%22%3E%3Ctext x=%2230%22 y=%2250%22 font-size=%2226%22 fill=%22%2300aeef%22 font-family=%22Segoe UI,Arial,sans-serif%22%3E%CF%80%3C/text%3E%3Ctext x=%22130%22 y=%2240%22 font-size=%2226%22 fill=%22%23f7941d%22 font-family=%22Segoe UI,Arial,sans-serif%22%3E%E2%88%91%3C/text%3E%3Ctext x=%22220%22 y=%2270%22 font-size=%2226%22 fill=%22%2300aeef%22 font-family=%22Segoe UI,Arial,sans-serif%22%3E%E2%9A%BD%3C/text%3E%3Ctext x=%2260%22 y=%22130%22 font-size=%2226%22 fill=%22%23f7941d%22 font-family=%22Segoe UI,Arial,sans-serif%22%3E%E2%9A%A1%3C/text%3E%3Ctext x=%22160%22 y=%22140%22 font-size=%2226%22 fill=%22%2300aeef%22 font-family=%22Segoe UI,Arial,sans-serif%22%3E%E2%88%9Ax%3C/text%3E%3Ctext x=%22250%22 y=%22160%22 font-size=%2226%22 fill=%22%23f7941d%22 font-family=%22Segoe UI,Arial,sans-serif%22%3E%E2%9A%9B%3C/text%3E%3Ctext x=%2220%22 y=%22210%22 font-size=%2226%22 fill=%22%2300aeef%22 font-family=%22Segoe UI,Arial,sans-serif%22%3E%E2%88%9E%3C/text%3E%3Ctext x=%22110%22 y=%22220%22 font-size=%2226%22 fill=%22%23f7941d%22 font-family=%22Segoe UI,Arial,sans-serif%22%3E%F0%9F%8F%83%3C/text%3E%3Ctext x=%22210%22 y=%22240%22 font-size=%2226%22 fill=%22%2300aeef%22 font-family=%22Segoe UI,Arial,sans-serif%22%3E%CE%94%3C/text%3E%3Ctext x=%22280%22 y=%2220%22 font-size=%2226%22 fill=%22%23f7941d%22 font-family=%22Segoe UI,Arial,sans-serif%22%3E%E2%99%A5%3C/text%3E%3Ctext x=%2290%22 y=%22285%22 font-size=%2226%22 fill=%22%2300aeef%22 font-family=%22Segoe UI,Arial,sans-serif%22%3E%CE%B8%3C/text%3E%3Ctext x=%22250%22 y=%22290%22 font-size=%2226%22 fill=%22%23f7941d%22 font-family=%22Segoe UI,Arial,sans-serif%22%3E%F0%9F%8F%80%3C/text%3E%3C/svg%3E") 0 0/320px 320px,radial-gradient(70% 50% at 50% 0%,rgba(0,174,239,.10),transparent)}section[style*='var(--panel)']{background:rgba(11,17,27,.82)!important}
+
+.rv{opacity:0;transform:translateY(24px);transition:opacity .7s,transform .7s}.rv.in{opacity:1;transform:none}
+.card{transition:transform .25s,border-color .25s,box-shadow .25s}.card:hover{transform:translateY(-5px);border-color:var(--cy);box-shadow:0 10px 30px rgba(0,174,239,.18)}
+.hero{position:relative;overflow:hidden}.hero .wrap{position:relative;z-index:1}
+.fl{position:absolute;bottom:-40px;font-size:28px;opacity:.18;animation:fu linear infinite;pointer-events:none}
+@keyframes fu{to{transform:translateY(-110vh) rotate(40deg)}}
+.ban{height:110px;margin:-22px -22px 14px;border-radius:16px 16px 0 0;display:grid;place-items:center;font-size:46px;position:relative;overflow:hidden}
+.ban::after{content:'';position:absolute;inset:0;background:radial-gradient(circle at 70% 20%,rgba(255,255,255,.25),transparent 55%)}
+.chips{display:flex;gap:8px;flex-wrap:wrap;margin:0 0 20px}.chips button{background:transparent;color:var(--mut);border:1px solid var(--line);border-radius:20px;padding:6px 16px;cursor:pointer;font-size:13px}.chips button.on{color:var(--cy);border-color:var(--cy)}
+.cd{display:flex;gap:10px;margin:0 0 24px;flex-wrap:wrap}.cd div{background:var(--bg);border:1px solid var(--cy);border-radius:12px;padding:10px 16px;text-align:center;min-width:76px}.cd b{display:block;font-size:28px;color:var(--cy)}.cd span{font-size:11px;color:var(--mut);letter-spacing:.12em}
+.lb{display:flex;flex-direction:column;gap:8px;margin-top:10px}.lbr{display:flex;align-items:center;gap:10px;transition:order .5s}.lbr .nm{width:90px;font-size:14px}.lbr .tr{flex:1;background:var(--line);border-radius:8px;height:22px;overflow:hidden}.lbr .fi{height:100%;width:0;transition:width .8s;border-radius:8px}.lbr .pt2{width:56px;text-align:right;font-weight:700}
+.dem{margin-top:24px}
+</style>
+</head>
+<body>
+<nav><div class="wrap"><a class="logo" href="#top">HOUMA<b>HYPE</b></a>
+<div class="links"><a href="#event">Next event</a><a href="#portfolio">Portfolio</a><a href="#schools">For schools</a><a href="#loop">The Loop</a><a href="#tech">Roadmap</a></div>
+<a class="btn" href="#book" style="padding:8px 16px;font-size:14px">Book a visit</a></div></nav>
+
+<header class="hero" id="top"><div class="wrap">
+<div class="eyebrow">Technology • Energy • Excellence</div>
+<h1>Where movement meets <em>mastery</em>.</h1>
+<p class="lead">HoumaHype turns student events into arenas that mix sport and STEM thinking. Our events run on NFC wristbands and live leaderboards today, and we are building wearables that measure how physical effort and mental performance affect each other.</p><p class="lead" style="color:var(--or);font-weight:700;margin-top:10px">High Aura. Higher Achievement.</p>
+<div class="cta"><a class="btn" href="#book">Book a school visit</a><a class="btn alt" href="#loop">See how it works</a></div>
+<div class="stats">
+<div class="stat"><b>6</b><span>student events run since 2023</span></div>
+<div class="stat"><b>110–135</b><span>attendees per event</span></div>
+<div class="stat"><b>1 day</b><span>turnkey school format</span></div>
+<div class="stat"><b>4 Dec</b><span>next event, Cairo</span></div>
+</div></div></header>
+
+<section id="event" style="background:var(--panel)"><div class="wrap">
+<div class="eyebrow">Next event</div>
+<h2>Barhoumatic Event 4</h2>
+<p class="sub">4 December 2026 · Club 7, Maadi, Cairo. A team-versus-team game day themed on the Egyptian series El-Le’ba.</p><div class="cd" id="cd"></div>
+<div class="grid">
+<div class="card"><h3>NFC wristbands</h3><p>Every player scans in at the start. Organizers tap wristbands at each game to add points, and scores update live.</p></div>
+<div class="card"><h3>8 colour zones</h3><p>400 flashing LED wristbands, split into 8 zones that light up in different colours from one remote controller.</p></div>
+<div class="card"><h3>Team battles</h3><p>Two teams, dozens of challenge games and a grand finale, run by a crew of fan organizers.</p></div>
+<div class="card"><h3>Live leaderboard</h3><p>A big screen shows the score as it changes, so the whole crowd feels every point.</p></div>
+<div class="card dem"><div class="tag">Live demo</div><h3>Feel the live leaderboard</h3><p>Press the button to play a round. Points land and the ranking reshuffles, just like on the big screen at our events.</p><div class="lb" id="lb"></div><div style="display:flex;gap:10px;margin-top:14px"><button class="btn" onclick="lbRound()">Play a round</button><button class="btn alt" onclick="lbReset()">Reset</button></div></div>
+</div></div></section>
+
+<section id="portfolio"><div class="wrap">
+<h2>Our event portfolio</h2>
+<p class="sub">Six events since 2023, each with 110 to 135 attendees, and the seventh is on the way.</p>
+<div class="grid">
+<div class="card"><div class="tag">Dec 2023</div><h3>Barhoumatic Event I</h3><p>The first Barhoumatic event: 12 game stations and 24 teams playing in parallel.</p></div>
+<div class="card"><div class="tag">Mar 2024</div><h3>Barhoumatic Iftar I</h3><p>A Ramadan iftar gathering built around padel and football tournaments.</p></div>
+<div class="card"><div class="tag">Dec 2024</div><h3>Barhoumatic Event II</h3><p>Bigger and still sports-driven: 32 teams and 16 game stations, with teams pairing off and moving from station to station.</p></div>
+<div class="card"><div class="tag">Mar 2025</div><h3>Barhoumatic Iftar II</h3><p>The second Ramadan iftar event.</p></div>
+<div class="card"><div class="tag">Dec 2025</div><h3>Barhoumatic Event III: Squid Game</h3><p>A themed edition where the games and stations followed the Squid Game theme.</p></div>
+<div class="card"><div class="tag">Ramadan 2026</div><h3>Barhoumatic Iftar III</h3><p>The third Ramadan iftar event.</p></div>
+<div class="card" style="border-color:var(--cy)"><div class="tag">4 Dec 2026 · Upcoming</div><h3>Barhoumatic Event IV: El-Le’ba (The Game)</h3><p>Club 7, Maadi, Cairo. Team battles inspired by the Egyptian series, with NFC wristbands and a live leaderboard.</p></div>
+</div></div></section>
+
+<section id="schools"><div class="wrap">
+<h2>A turnkey tournament for your school</h2>
+<p class="sub">Bring the energy of our events to your campus without adding work for your teachers.</p>
+<div class="grid">
+<div class="card"><span class="num">THE FORMAT</span><h3>One day, 4 to 5 hours</h3><p>60 to 120 students per day in competing teams. Larger schools run a house championship over several days, one grade at a time.</p></div>
+<div class="card"><span class="num">WE BRING</span><h3>The whole production</h3><p>NFC wristbands, game logic, scoring software, referees, props and a big-screen leaderboard.</p></div>
+<div class="card"><span class="num">YOU PROVIDE</span><h3>Space and students</h3><p>A sports hall, gym or field, and your students. Nothing else to set up or supervise.</p></div>
+<div class="card"><span class="num">THE RESULT</span><h3>House spirit that parents see</h3><p>A highlight of the school year that builds team spirit, gets students moving and shows well on open days.</p></div>
+</div></div></section>
+
+<section id="loop"><div class="wrap">
+<h2>The Neuro-Somatic Loop</h2>
+<p class="sub">Physical energy primes the brain. We capture the moment and turn it into learning.</p>
+<div class="grid">
+<div class="card"><span class="num">PHASE 01</span><h3>Kinetic Ignition</h3><p>Teams of students raise their heart rate and adrenaline through high-intensity activity stations.</p></div>
+<div class="card"><span class="num">PHASE 02</span><h3>Dynamic STEM Duel</h3><p>At each Aura-Pod, a randomized problem appears. Students answer under pressure and tap to validate mastery.</p></div>
+<div class="card"><span class="num">PHASE 03</span><h3>Barhoumatic Revision Drops</h3><p>Gaps spotted during the duel unlock targeted revision videos and rewards in the student’s app.</p></div>
+</div></div></section>
+
+<section id="aura"><div class="wrap">
+<h2>A 60-second Aura Loop</h2>
+<p class="sub">One student, one minute, and the whole system at work. This is the full Aura Decathlon format we are building toward.</p>
+<div class="grid">
+<div class="card"><span class="num">1 · ENTRY</span><h3>Tap in</h3><p>The student taps their Bio-Aura Band on a station. The HoumaHype app authenticates them and opens their profile.</p></div>
+<div class="card"><span class="num">2 · CHALLENGE</span><h3>Move and think</h3><p>On the Hype-Bike, the student keeps their heart rate up to power the 4K LED wall. A physics prompt is built from their own live RPM and power.</p></div>
+<div class="card"><span class="num">3 · INSIGHT</span><h3>Gaps found</h3><p>If the answer is wrong, the system records the exact concept behind the mistake and drops a revision video into the student’s wallet.</p></div>
+<div class="card"><span class="num">4 · RESULT</span><h3>Data for teachers</h3><p>The school receives a Skill-Map report showing which concepts the class found hardest, so teaching can be targeted the next day.</p></div>
+</div>
+<p class="sub" style="margin:28px 0 0"><b style="color:var(--ink)">Built on real events.</b> Since 2023, founder Barhouma, an IGCSE maths teacher, has run six student events in Egypt with 110 to 135 attendees each, from a 12-station game day to a Squid Game–themed night. HoumaHype turns that format into a full tech-driven arena.</p>
+</div></section>
+
+<section id="tech" style="background:var(--panel)"><div class="wrap">
+<h2>The technology roadmap</h2>
+<p class="sub">The Aura Decathlon hardware is in development. Band, pod and server are designed to work as one system, with no dependence on school Wi-Fi or the internet.</p>
+<div class="grid">
+<div class="card"><div class="tag">Wearable</div><h3>Bio-Aura Band</h3><p>Heart rate, HRV, SpO₂, skin response and motion sensing at 50 Hz. Waterproof, sand-proof and built for 96 hours of use.</p></div>
+<div class="card"><div class="tag">Station</div><h3>Aura-Pod Activity Dock</h3><p>A collision-safe riser column at hand height, with a rugged 12.9" screen, NFC tap validation and a status ring.</p></div>
+<div class="card"><div class="tag">Network</div><h3>Autonomous Aura Mesh</h3><p>A private Wi-Fi 6E network covering a stadium-sized field. Every pod extends the signal so data syncs instantly.</p></div>
+<div class="card"><div class="tag">Command</div><h3>Mobile Edge Server</h3><p>An AI-accelerated server inside the tour truck processes live data and drives the exterior leaderboard wall.</p></div>
+</div></div></section>
+
+<section id="app"><div class="wrap split">
+<div><h2>The HoumaHype app</h2>
+<p class="sub">Your student identity, money, games and events in one place, built to feel like a superpower, not a school app. Four tabs, one clear purpose each.</p>
+<div class="grid" style="grid-template-columns:1fr 1fr">
+<div class="card"><h3>Barhams</h3><p>Balance, top-ups and a full ledger.</p></div>
+<div class="card"><h3>Aura Score</h3><p>The Aura Orb, Skill-Map, Loot Drops and the leaderboard.</p></div>
+<div class="card"><h3>Events</h3><p>Upcoming and past activations.</p></div>
+<div class="card"><h3>Profile</h3><p>Level, badges and your paired band.</p></div>
+</div></div>
+<div><div class="phone"><div class="screen" id="screen"></div><div class="tabs" id="tabs"></div></div>
+<p style="text-align:center;color:var(--mut);font-size:12px">Interactive preview with demo data. Try the slider, the vault and the buttons.</p></div>
+</div></section>
+
+
+<section id="tour" style="background:var(--panel)"><div class="wrap">
+<h2>Where we run events</h2>
+<p class="sub">We run events in Cairo today and are bringing the format to schools in the UAE and Saudi Arabia.</p>
+<div class="grid" id="cities"></div>
+</div></section>
+
+<section id="book"><div class="wrap">
+<h2>Book a school visit</h2>
+<p class="sub">For principals and school leaders: tell us about your school and we will arrange an inspection tour.</p>
+<form id="f">
+<label>School name<input name="school" required></label>
+<label>Your name and role<input name="name" required></label>
+<label>Email<input type="email" name="email" required></label>
+<label>City<select name="city"><option>Abu Dhabi</option><option>Dubai</option><option>Riyadh</option><option>Cairo</option><option>Other</option></select></label>
+<label>Approximate number of students<input name="n" inputmode="numeric"></label>
+<label>Notes<textarea name="notes" rows="3"></textarea></label>
+<button class="btn" type="submit">Request a visit</button><div id="msg" role="status"></div>
+</form></div></section>
+
+<footer><div class="wrap">© HoumaHype · High Aura. Higher Achievement.<br><a href="mailto:info@houmahype.com" style="color:var(--cy)">info@houmahype.com</a><br>Technology • Energy • Excellence</div></footer>
+
+<script>
+var INBOX="info@houmahype.com"; // set to the booking email address to enable the form
+var cur='Aura Score',sub='Home',eng=85,xp=72,sk='Physics';
+var tabs=document.getElementById('tabs'),scr=document.getElementById('screen');
+function mix(t){var a=[0,174,239],b=[247,148,29];return a.map(function(v,i){return Math.round(v+(b[i]-v)*t)}).join(',')}
+function row(a,b,c){return '<div class="rk" style="font-weight:400"><span style="margin:0;color:var(--ink)">'+a+'</span><span class="'+c+'">'+b+'</span></div>'}
+function head(){return '<div class="top"><b class="italic" style="font-size:16px">HOUMAHYPE</b><span id="sync" class="sync" title="Ledger sync">\u27f3</span></div><div class="who"><div class="av">S</div><div><b>Sample Student</b><div style="color:var(--mut);font-size:12px">Level 28 \u00b7 Barhoumatic Architect</div></div><span class="pill">Orange Level</span></div>'}
+function hex(cx,cy,r){var p=[];for(var i=0;i<6;i++){var a=Math.PI/3*i;p.push((cx+r*Math.cos(a)).toFixed(1)+','+(cy+r*Math.sin(a)).toFixed(1))}return p.join(' ')}
+var SK={Physics:['#00aeef','Force 8.5/10 \u00b7 Momentum 9.1/10'],'Bio/Chem':['#f7941d','Enzymes 6.8/10 \u00b7 Bonding 7.5/10'],'Math/Tech':['#e8f1f7','Chain Rule 7.2/10 \u00b7 Vectors 8.0/10']};
+function skillmap(){var pos={Physics:[205,70,46],'Bio/Chem':[85,85,40],'Math/Tech':[140,150,38]},h='';
+Object.keys(pos).forEach(function(k){var q=pos[k],on=k===sk;h+='<g class="hexb" onclick="pickSk(\''+k+'\')"><polygon points="'+hex(q[0],q[1],q[2])+'" fill="'+SK[k][0]+'" fill-opacity="'+(on?.55:.2)+'" stroke="'+SK[k][0]+'" stroke-width="'+(on?3:1.5)+'"/><text x="'+q[0]+'" y="'+(q[1]+4)+'" text-anchor="middle" font-size="11" fill="#fff">'+k+'</text></g>'});
+return '<div class="glass"><div class="cap">KINETIC SKILL-MAP</div><svg viewBox="0 0 300 200" width="100%"><line x1="85" y1="85" x2="205" y2="70" stroke="#00aeef" stroke-opacity=".4"/><line x1="85" y1="85" x2="140" y2="150" stroke="#00aeef" stroke-opacity=".4"/><line x1="205" y1="70" x2="140" y2="150" stroke="#00aeef" stroke-opacity=".4"/>'+h+'</svg><div style="font-size:13px"><b style="color:'+SK[sk][0]+'">'+sk+'</b><br>'+SK[sk][1]+'</div><div style="font-size:11px;color:var(--mut);margin-top:4px">Tap a sector to see sub-topic mastery.</div></div>'}
+function loot(){return '<div class="vault" id="v"><div class="burst"></div><div class="loot"><div class="lc">Revision<br>PDFs</div><div class="lc">Equipment<br>Pack</div><div class="lc">Merch<br>Voucher</div></div><div class="door l"></div><div class="door r"></div></div><div style="display:flex"><button class="btn2" onclick="document.getElementById(\'v\').classList.toggle(\'open\')">Open the vault</button></div><div style="font-size:11px;color:var(--mut)">A Loot Drop unlocks after a successful STEM duel.</div>'}
+function ledger(){var n=[['Nova_7','1,950'],['Kairo','1,900'],['Zed_9','1,870'],['Lumi','1,860'],['Rafa_X','1,850']],h='<div class="glass"><div class="cap">THE LEDGER \u00b7 TOP 100</div>';
+n.forEach(function(x,i){h+='<div class="rk"><b class="italic">#'+(i+1)+'</b>'+x[0]+'<span class="italic">'+x[1]+'</span></div>'});
+return h+'</div><div class="me"><b>YOUR RANK: #42</b> | Sample Student | 1,420 | Regional Top 100</div>'}
+function aura(){var pills='<div class="pills">'+['Home','Skill-Map','Loot','Ledger'].map(function(p){return '<button class="'+(p===sub?'on':'')+'" onclick="pickSub(\''+p+'\')">'+p+'</button>'}).join('')+'</div>';
+var hm='<div><div class="cap">HYPE-METER <span id="hmv">'+eng+'%</span></div><div class="hmw"><div class="hm" id="hm" style="width:'+eng+'%"></div></div></div>';
+var body='';
+if(sub==='Home')body='<div class="glass" style="text-align:center"><div style="text-align:left;font-weight:600">Aura Orb</div><div class="orb" id="orb"></div><div class="cap" style="text-align:left">XP</div><div class="hmw" style="margin:4px 0 8px"><div class="hm" style="width:'+xp+'%"></div></div><div class="cap">AURA BALANCE</div><div class="italic" style="font-size:26px;color:var(--or)">7,450,230 BA</div></div><label class="cap">ENGAGEMENT, LOW TO HIGH<input type="range" min="0" max="100" value="'+eng+'" oninput="setEng(this.value)" style="width:100%"></label><div style="display:flex;gap:8px"><button class="btn2" onclick="tapScan(this)">The Tap</button><button class="btn2" onclick="levelUp()">Level-up</button></div><div class="mini"><div class="glass"><b>ACTIVATIONS</b>'+row('STEM Challenge','+1.2K BA','plus')+row('Hype-Bike Duel','+450 BA','plus')+'</div><div class="glass"><b>LEDGER</b>'+row('Loot Unlocked','\u2212500 BA','minus')+row('Math Mastery','+800 BA','plus')+'</div></div>';
+else if(sub==='Skill-Map')body=skillmap();else if(sub==='Loot')body=loot();else body=ledger();
+return hm+pills+body}
+var PAGES={
+'Barhams':function(){return '<div class="glass"><div class="cap">BARHAMS BALANCE</div><div class="italic" style="font-size:30px;color:var(--or)">2,450 BA</div><div style="display:flex;gap:8px;margin-top:8px"><button class="btn2" onclick="tapScan(this)">Top up</button><button class="btn2" onclick="tapScan(this)">Send</button></div></div><div class="glass"><div class="cap">LEDGER</div>'+row('Top-up','+500 BA','plus')+row('Loot unlocked','\u2212500 BA','minus')+row('Math mastery','+800 BA','plus')+row('STEM challenge','+1.2K BA','plus')+'</div>'},
+'Aura Score':aura,
+'Events':function(){var E=[['Barhoumatic Event I','Dec 2023','Done'],['Barhoumatic Iftar I','Mar 2024','Done'],['Barhoumatic Event II','Dec 2024','Done'],['Barhoumatic Iftar II','Mar 2025','Done'],['Barhoumatic Event III: Squid Game','Dec 2025','Done'],['Barhoumatic Iftar III','Ramadan 2026','Done'],['Barhoumatic Event IV: El-Le\u2019ba (The Game)','4 Dec 2026','Upcoming']],h='<div class="glass"><div class="cap">EVENT PORTFOLIO</div>';E.forEach(function(e){var up=e[2]==='Upcoming';h+='<div class="rk" style="align-items:flex-start"><div style="flex:1"><b style="width:auto;display:block;color:var(--ink)">'+e[0]+'</b><div style="color:var(--mut);font-size:12px">'+e[1]+'</div></div><span style="color:'+(up?'var(--cy)':'var(--mut)')+'">'+e[2]+'</span></div>'});return h+'</div><div class="glass"><div class="cap">COMING TO SCHOOLS</div><div style="font-size:13px;color:var(--mut)">Abu Dhabi, Dubai and Riyadh (planned)</div></div>'},
+'Profile':function(){return '<div class="glass"><div class="cap">PROFILE</div>'+row('Level','28','plus')+row('Band','Paired','plus')+row('Badges','12','')+row('Security','Rolling keys on','plus')+'</div>'}};
+function render(){scr.innerHTML=head()+PAGES[cur]();[].forEach.call(tabs.children,function(b){b.className=b.dataset.k===cur?'on':''});paintOrb()}
+function go(k){cur=k;render()}function pickSub(p){sub=p;render()}function pickSk(k){sk=k;render()}
+function paintOrb(){var o=document.getElementById('orb');if(!o)return;var c=mix(eng/100);o.style.background='radial-gradient(circle at 35% 30%,rgba(255,255,255,.75),rgb('+c+') 45%,rgba('+c+',.35))';o.style.boxShadow='0 0 '+(20+eng/2)+'px rgba('+c+',.7)';o.style.animationDuration=(3-eng/50)+'s'}
+function setEng(v){eng=+v;paintOrb();document.getElementById('hm').style.width=eng+'%';document.getElementById('hmv').textContent=eng+'%'}
+function tapScan(b){var r=document.createElement('span');r.className='rip';b.appendChild(r);var s=document.getElementById('sync');s.className='sync spin';setTimeout(function(){r.remove();s.className='sync ok'},900);setTimeout(function(){s.className='sync'},2600)}
+function levelUp(){var f=document.createElement('div');f.className='flash';scr.appendChild(f);for(var i=0;i<24;i++){var p=document.createElement('span'),a=Math.random()*6.28,d=60+Math.random()*110;p.className='pt';p.style.setProperty('--x',Math.cos(a)*d+'px');p.style.setProperty('--y',Math.sin(a)*d+'px');scr.appendChild(p);setTimeout(function(n){n.remove()},1100,p)}setTimeout(function(){f.remove()},800)}
+Object.keys(PAGES).forEach(function(k){var b=document.createElement('button');b.textContent=k;b.dataset.k=k;b.onclick=function(){go(k)};tabs.appendChild(b)});
+render();
+
+var c=document.getElementById('cities');
+[['Cairo','Egypt','Events running since 2023'],['Abu Dhabi','UAE','Planned for schools'],['Dubai','UAE','Planned for schools'],['Riyadh','Saudi Arabia','Planned for schools']].forEach(function(x){c.insertAdjacentHTML('beforeend','<div class="card"><div class="tag">'+x[1]+'</div><h3>'+x[0]+'</h3><p>'+x[2]+'</p></div>')});
+document.getElementById('f').onsubmit=function(e){e.preventDefault();var d=new FormData(e.target),m=document.getElementById('msg');
+if(!INBOX){m.textContent='Thank you. Our booking inbox is being connected, so please check back shortly.';return}
+var body=['School: '+d.get('school'),'Contact: '+d.get('name'),'Email: '+d.get('email'),'City: '+d.get('city'),'Students: '+d.get('n'),'Notes: '+d.get('notes')].join('\n');
+location.href='mailto:'+INBOX+'?subject='+encodeURIComponent('School visit request: '+d.get('school'))+'&body='+encodeURIComponent(body);m.textContent='Opening your email app to send the request.'};
+
+var VIDEOS={e1:'event1.mp4',i1:'',e2:'event2.mp4',i2:'',e3:'event3.mp4',i3:'',e4:''};
+var VN={'Barhoumatic Event I':'e1','Barhoumatic Iftar I':'i1','Barhoumatic Event II':'e2','Barhoumatic Iftar II':'i2','Barhoumatic Event III: Squid Game':'e3','Barhoumatic Iftar III':'i3','Barhoumatic Event IV: El-Le\u2019ba (The Game)':'e4'};
+function vEmbed(u){var m;
+ if((m=u.match(/youtu\.be\/([\w-]{6,})/))||(m=u.match(/youtube\.com\/(?:watch\?(?:.*&)?v=|shorts\/|embed\/)([\w-]{6,})/)))return 'https://www.youtube-nocookie.com/embed/'+m[1]+'?autoplay=1&rel=0';
+ if((m=u.match(/vimeo\.com\/(?:video\/)?(\d+)/)))return 'https://player.vimeo.com/video/'+m[1]+'?autoplay=1';
+ if((m=u.match(/drive\.google\.com\/file\/d\/([\w-]+)/)))return 'https://drive.google.com/file/d/'+m[1]+'/preview';
+ return '';}
+function playV(id){var u=VIDEOS[id],e=vEmbed(u),m=document.getElementById('vv');
+ if(/\.mp4$/i.test(u)){m.src=u;m.style.display='block';document.getElementById('vf').style.display='none';document.getElementById('vo').style.display='none';document.getElementById('vm').classList.add('on');m.play();return;}
+ document.getElementById('vf').style.display='';document.getElementById('vo').style.display='';m.style.display='none';if(!e){window.open(u,'_blank','noopener');return;}
+ document.getElementById('vf').src=e;document.getElementById('vo').href=u;document.getElementById('vm').classList.add('on');}
+function closeV(){var m=document.getElementById('vv');m.pause();m.removeAttribute('src');m.style.display='none';document.getElementById('vm').classList.remove('on');document.getElementById('vf').src='';}
+document.addEventListener('keydown',function(e){if(e.key==='Escape')closeV();});
+(function(){var cs=document.querySelectorAll('#portfolio .card');for(var i=0;i<cs.length;i++){var h=cs[i].querySelector('h3');if(!h)continue;var id=VN[h.textContent.trim()];if(id&&VIDEOS[id]){var b=document.createElement('button');b.className='btn2 vbtn';b.textContent='\u25B6 Watch video';(function(x){b.onclick=function(){playV(x);};})(id);cs[i].appendChild(b);}}})();
+
+(function(){
+// countdown
+var T=new Date('2026-12-04T16:00:00+02:00').getTime();
+function cd(){var d=T-Date.now(),el=document.getElementById('cd');if(!el)return;if(d<0){el.innerHTML='<div><b>Live!</b><span>EVENT DAY</span></div>';return}
+var v=[[Math.floor(d/864e5),'DAYS'],[Math.floor(d/36e5)%24,'HOURS'],[Math.floor(d/6e4)%60,'MIN'],[Math.floor(d/1e3)%60,'SEC']];
+el.innerHTML=v.map(function(x){return '<div><b>'+x[0]+'</b><span>'+x[1]+'</span></div>'}).join('')}
+cd();setInterval(cd,1000);
+// floating symbols
+var h=document.querySelector('.hero'),S=['\u03c0','\u2211','\u26a1','\u26bd','\u221a','\u221e','\u0394','\u269b','\ud83c\udfc3','\ud83c\udfc0'];
+for(var i=0;i<16;i++){var f=document.createElement('span');f.className='fl';f.textContent=S[i%S.length];f.style.left=(Math.random()*96)+'%';f.style.animationDuration=(12+Math.random()*14)+'s';f.style.animationDelay=(-Math.random()*20)+'s';f.style.fontSize=(20+Math.random()*28)+'px';h.appendChild(f)}
+// banners + filter
+var B={'Barhoumatic Event I':['\ud83c\udfaf','#00aeef,#0a3d62','e'],'Barhoumatic Iftar I':['\ud83c\udf19','#f7941d,#7a3d00','i'],'Barhoumatic Event II':['\u26bd','#00aeef,#14213d','e'],'Barhoumatic Iftar II':['\ud83c\udf19','#f7941d,#5a2d00','i'],'Barhoumatic Event III: Squid Game':['\ud83e\udd91','#e91e63,#3a0a24','e'],'Barhoumatic Iftar III':['\ud83c\udf19','#f7941d,#3d1f00','i'],'Barhoumatic Event IV: El-Le\u2019ba (The Game)':['\ud83c\udfae','#00aeef,#f7941d','e']};
+var COVERS={'Barhoumatic Event III: Squid Game':'e3cover.jpg','Barhoumatic Event II':'e2cover.jpg','Barhoumatic Event I':'e1cover.jpg','Barhoumatic Event IV: El-Le\u2019ba (The Game)':'e4cover.jpg'};
+var cs=document.querySelectorAll('#portfolio .card');
+[].forEach.call(cs,function(c){var t=c.querySelector('h3').textContent.trim(),b=B[t];if(!b)return;c.dataset.k=b[2];var d=document.createElement('div');d.className='ban';d.style.background='linear-gradient(135deg,'+b[1]+')';d.textContent=b[0];if(COVERS[t]){d.textContent='';d.style.cssText+=(COVERS[t]==='e4cover.jpg'?';height:0;padding-top:125%;':';height:210px;')+'background:#000 url('+COVERS[t]+') center 30%/cover no-repeat'}c.insertBefore(d,c.firstChild)});
+var g=document.querySelector('#portfolio .grid'),ch=document.createElement('div');ch.className='chips';
+[['all','All'],['e','Main events'],['i','Ramadan iftars']].forEach(function(x,i){var b=document.createElement('button');b.textContent=x[1];if(!i)b.className='on';b.onclick=function(){[].forEach.call(ch.children,function(y){y.className=''});b.className='on';[].forEach.call(cs,function(c){c.style.display=(x[0]==='all'||c.dataset.k===x[0])?'':'none'})};ch.appendChild(b)});
+g.parentNode.insertBefore(ch,g);
+// leaderboard
+var TM=[['Team Red','#e53935'],['Team Blue','#00aeef'],['Team Green','#2ee27a'],['Team Gold','#f7941d'],['Team Violet','#ab47bc']],sc=TM.map(function(){return 0}),lb=document.getElementById('lb');
+TM.forEach(function(t,i){lb.insertAdjacentHTML('beforeend','<div class="lbr" id="r'+i+'"><span class="nm">'+t[0]+'</span><div class="tr"><div class="fi" style="background:'+t[1]+'"></div></div><span class="pt2">0</span></div>')});
+function paint(){var m=Math.max.apply(null,sc.concat([100])),o=sc.map(function(v,i){return [v,i]}).sort(function(a,b){return b[0]-a[0]});
+o.forEach(function(x,r){var e=document.getElementById('r'+x[1]);e.style.order=r;e.querySelector('.fi').style.width=(x[0]/m*100)+'%';e.querySelector('.pt2').textContent=x[0]})}
+window.lbRound=function(){sc=sc.map(function(v){return v+Math.floor(Math.random()*90)+10});paint()};
+window.lbReset=function(){sc=sc.map(function(){return 0});paint()};
+paint();
+// scroll reveal
+var els=document.querySelectorAll('section .card,.stat,section h2,.chips');
+els.forEach(function(e){e.classList.add('rv')});
+if('IntersectionObserver' in window){var io=new IntersectionObserver(function(en){en.forEach(function(x){if(x.isIntersecting){x.target.classList.add('in');io.unobserve(x.target)}})},{threshold:.1});els.forEach(function(e){io.observe(e)})}else els.forEach(function(e){e.classList.add('in')});
+})();
+</script>
+<div class="vmodal" id="vm" onclick="if(event.target===this)closeV()"><div class="vbox"><video id="vv" controls playsinline preload="none" style="display:none;max-height:80vh;max-width:100%;margin:0 auto;border-radius:12px;background:#000"></video><iframe id="vf" allow="autoplay; encrypted-media; fullscreen" allowfullscreen></iframe><div class="vbar"><a id="vo" target="_blank" rel="noopener">Open in a new tab</a><button class="btn2" style="flex:none;padding:8px 16px" onclick="closeV()">Close</button></div></div></div>
+</body>
+</html>
