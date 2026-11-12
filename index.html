@@ -370,7 +370,7 @@ document.querySelectorAll('.card').forEach(function(c){var h=c.querySelector('h3
 document.querySelectorAll('.grid').forEach(function(g){[].forEach.call(g.children,function(c,i){c.classList.add(i%2?'r':'l')})});
 (function(){var car=document.getElementById('vcar');if(!car)return;var D=car.querySelector('.vdots');D.className='vlab';D.innerHTML='';
 function add(src,label){var s=document.createElement('div');s.className='vs2';s.dataset.label=label;var v=document.createElement('video');v.muted=true;v.loop=true;v.playsInline=true;v.preload='none';v.dataset.src=src;v.poster=/^event(\d)\.mp4$/.test(src)?src.replace(/^event(\d)\.mp4$/,'e$1cover.jpg'):src.replace(/\.mp4$/,'.jpg');v.setAttribute('playsinline','');s.appendChild(v);var l=document.createElement('span');l.className='live';l.innerHTML='&#9679; '+label;s.appendChild(l);car.insertBefore(s,D);return s}
-function mk(id,name){var L=VIDEOS[id]||[];L.forEach(function(u,i){if(!/\.mp4$/.test(u))return;add(u,name+(/e2f_/.test(u)?' &middot; FEEDBACK':'')+' &middot; '+(i+1)+'/'+L.length)})}
+function mk(id,name){var L=[].concat(VIDEOS[id]||[]);L.forEach(function(u,i){if(!/\.mp4$/.test(u))return;add(u,name+(/e2f_/.test(u)?' &middot; FEEDBACK':'')+' &middot; '+(i+1)+'/'+L.length)})}
 mk('e3','EVENT III');mk('e2','EVENT II');mk('e1','EVENT I');
 var S=[].slice.call(car.querySelectorAll('.vs2')),cur=0,tm;
 S[0].dataset.label='';
