@@ -180,13 +180,13 @@ section#event{border-top:5px solid;border-image:linear-gradient(90deg,var(--rd),
 <h2>Our event portfolio</h2>
 <p class="sub">Six events since 2023, each with 110 to 135 attendees, and the seventh is on the way.</p>
 <div class="grid">
-<div class="card"><div class="tag">Dec 2023</div><h3>Barhoumatic Event I</h3><p>The first Barhoumatic event: 12 game stations and 24 teams playing in parallel.</p></div>
-<div class="card"><div class="tag">Mar 2024</div><h3>Barhoumatic Iftar I</h3><p>A Ramadan iftar gathering built around padel and football tournaments.</p></div>
-<div class="card"><div class="tag">Dec 2024</div><h3>Barhoumatic Event II</h3><p>Bigger and still sports-driven: 32 teams and 16 game stations, with teams pairing off and moving from station to station.</p></div>
-<div class="card"><div class="tag">Mar 2025</div><h3>Barhoumatic Iftar II</h3><p>The second Ramadan iftar event.</p></div>
-<div class="card"><div class="tag">Dec 2025</div><h3>Barhoumatic Event III: Squid Game</h3><p>A themed edition where the games and stations followed the Squid Game theme.</p></div>
-<div class="card"><div class="tag">Ramadan 2026</div><h3>Barhoumatic Iftar III</h3><p>The third Ramadan iftar event.</p></div>
 <div class="card" style="border-color:var(--cy)"><div class="tag">4 Dec 2026 · Upcoming</div><h3>Barhoumatic Event IV: El-Le’ba (The Game)</h3><p>Club 7, Maadi, Cairo. Team battles inspired by the Egyptian series, with NFC wristbands and a live leaderboard.</p><p style="margin-top:12px"><a class="btn" href="https://docs.google.com/forms/d/e/1FAIpQLSdvco3ygC1QWl_FF5PHsXBNhUnm9QDb0ICy5zIFxjpw72dOHA/viewform" target="_blank" rel="noopener" style="padding:8px 16px;font-size:14px">Register now</a></p></div>
+<div class="card"><div class="tag">Ramadan 2026</div><h3>Barhoumatic Iftar III</h3><p>The third Ramadan iftar event.</p></div>
+<div class="card"><div class="tag">Dec 2025</div><h3>Barhoumatic Event III: Squid Game</h3><p>A themed edition where the games and stations followed the Squid Game theme.</p></div>
+<div class="card"><div class="tag">Mar 2025</div><h3>Barhoumatic Iftar II</h3><p>The second Ramadan iftar event.</p></div>
+<div class="card"><div class="tag">Dec 2024</div><h3>Barhoumatic Event II</h3><p>Bigger and still sports-driven: 32 teams and 16 game stations, with teams pairing off and moving from station to station.</p></div>
+<div class="card"><div class="tag">Mar 2024</div><h3>Barhoumatic Iftar I</h3><p>A Ramadan iftar gathering built around padel and football tournaments.</p></div>
+<div class="card"><div class="tag">Dec 2023</div><h3>Barhoumatic Event I</h3><p>The first Barhoumatic event: 12 game stations and 24 teams playing in parallel.</p></div>
 </div></div></section>
 
 <section id="schools"><div class="wrap">
@@ -290,7 +290,7 @@ return hm+pills+body}
 var PAGES={
 'Barhams':function(){return '<div class="glass"><div class="cap">BARHAMS BALANCE</div><div class="italic" style="font-size:30px;color:var(--or)">2,450 BA</div><div style="display:flex;gap:8px;margin-top:8px"><button class="btn2" onclick="tapScan(this)">Top up</button><button class="btn2" onclick="tapScan(this)">Send</button></div></div><div class="glass"><div class="cap">LEDGER</div>'+row('Top-up','+500 BA','plus')+row('Loot unlocked','\u2212500 BA','minus')+row('Math mastery','+800 BA','plus')+row('STEM challenge','+1.2K BA','plus')+'</div>'},
 'Aura Score':aura,
-'Events':function(){var E=[['Barhoumatic Event I','Dec 2023','Done'],['Barhoumatic Iftar I','Mar 2024','Done'],['Barhoumatic Event II','Dec 2024','Done'],['Barhoumatic Iftar II','Mar 2025','Done'],['Barhoumatic Event III: Squid Game','Dec 2025','Done'],['Barhoumatic Iftar III','Ramadan 2026','Done'],['Barhoumatic Event IV: El-Le\u2019ba (The Game)','4 Dec 2026','Upcoming']],h='<div class="glass"><div class="cap">EVENT PORTFOLIO</div>';E.forEach(function(e){var up=e[2]==='Upcoming';h+='<div class="rk" style="align-items:flex-start"><div style="flex:1"><b style="width:auto;display:block;color:var(--ink)">'+e[0]+'</b><div style="color:var(--mut);font-size:12px">'+e[1]+'</div></div><span style="color:'+(up?'var(--cy)':'var(--mut)')+'">'+e[2]+'</span></div>'});return h+'</div><div class="glass"><div class="cap">COMING TO SCHOOLS</div><div style="font-size:13px;color:var(--mut)">Abu Dhabi, Dubai and Riyadh (planned)</div></div>'},
+'Events':function(){var E=['Barhoumatic Event IV: El-Le\u2019ba (The Game)','4 Dec 2026','Upcoming']],['Barhoumatic Iftar III','Ramadan 2026','Done'],['Barhoumatic Event III: Squid Game','Dec 2025','Done'],['Barhoumatic Iftar II','Mar 2025','Done'],['Barhoumatic Event II','Dec 2024','Done'],['Barhoumatic Iftar I','Mar 2024','Done'],[['Barhoumatic Event I','Dec 2023','Done'],h='<div class="glass"><div class="cap">EVENT PORTFOLIO</div>';E.forEach(function(e){var up=e[2]==='Upcoming';h+='<div class="rk" style="align-items:flex-start"><div style="flex:1"><b style="width:auto;display:block;color:var(--ink)">'+e[0]+'</b><div style="color:var(--mut);font-size:12px">'+e[1]+'</div></div><span style="color:'+(up?'var(--cy)':'var(--mut)')+'">'+e[2]+'</span></div>'});return h+'</div><div class="glass"><div class="cap">COMING TO SCHOOLS</div><div style="font-size:13px;color:var(--mut)">Abu Dhabi, Dubai and Riyadh (planned)</div></div>'},
 'Profile':function(){return '<div class="glass"><div class="cap">PROFILE</div>'+row('Level','28','plus')+row('Band','Paired','plus')+row('Badges','12','')+row('Security','Rolling keys on','plus')+'</div>'}};
 function render(){scr.innerHTML=head()+PAGES[cur]();[].forEach.call(tabs.children,function(b){b.className=b.dataset.k===cur?'on':''});paintOrb()}
 function go(k){cur=k;render()}function pickSub(p){sub=p;render()}function pickSk(k){sk=k;render()}
