@@ -4,6 +4,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <title>HoumaHype App</title>
 <meta name="theme-color" content="#081230">
+<script src="firebase-config.js"></script>
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="icon-192.png">
 <meta name="apple-mobile-web-app-capable" content="yes">
@@ -77,11 +78,11 @@ input{width:100%;padding:14px;border-radius:12px;border:1px solid var(--line);ba
    To go live, replace DB with an adapter that has the same 4 methods:
      DB.demo            -> false
      DB.get(code)       -> Promise<player|null>   player = {code,nick,team,barhams,aura,tx:[{t,d,ts}]}
-     DB.all()           -> Promise<player[]>
+     DB.top(n)          -> player[] (top n by aura)   DB.teams() -> {MaZoo,WiSoo}   DB.rank(code) -> number|null
      DB.on(fn)          -> calls fn() whenever any player changes (realtime listener)
      DB.setNick(code,n) -> Promise
    (Firebase Firestore or Supabase Realtime both fit this shape.) */
-var DB=(function(){
+var DemoDB=(function(){
   var NAMES=['Falcon','Blaze','Nova','Turbo','Ghost','Rocket','Viper','Storm','Echo','Titan','Comet','Rogue'];
   var P={},subs=[];
   for(var i=0;i<24;i++){var c='HH-'+('00'+(i+1)).slice(-3);P[c]={code:c,nick:NAMES[i%12]+(i>11?' II':''),team:i%2?'WiSoo':'MaZoo',barhams:60+((i*37)%140),aura:120+((i*83)%760),tx:[{t:'Welcome bonus',d:50,ts:Date.now()-36e5}]}}
@@ -93,10 +94,32 @@ var DB=(function(){
     subs.forEach(function(f){f(p.code)})},3500);
   return{demo:true,
     get:function(c){c=(c||'').trim().toUpperCase();return Promise.resolve(P[c]||null)},
-    all:function(){return Promise.resolve(codes.map(function(c){return P[c]}))},
+    top:function(n){return codes.map(function(c){return P[c]}).sort(function(a,b){return b.aura-a.aura}).slice(0,n)},
+    teams:function(){var r={MaZoo:0,WiSoo:0};codes.forEach(function(c){r[P[c].team]+=P[c].aura});return r},
+    rank:function(c){var s=codes.map(function(x){return P[x]}).sort(function(a,b){return b.aura-a.aura});var i=s.findIndex(function(p){return p.code===c});return i<0?null:i+1},
     on:function(f){subs.push(f)},
     setNick:function(c,n){P[c].nick=n;subs.forEach(function(f){f(c)});return Promise.resolve()}}
 })();
+
+var FbDB=function(cfg){
+  var db,P={},top=[],teams={MaZoo:0,WiSoo:0},subs=[],mine=null,ready;
+  firebase.initializeApp(cfg);db=firebase.firestore();
+  function ping(c){subs.forEach(function(f){f(c)})}
+  var o={demo:false,
+    get:function(c){c=(c||'').trim().toUpperCase();if(!/^[A-Z0-9-]{3,12}$/.test(c))return Promise.resolve(null);
+      return db.collection('players').doc(c).get().then(function(d){if(!d.exists)return null;P[c]=d.data();
+        if(mine!==c){mine=c;db.collection('players').doc(c).onSnapshot(function(s){if(s.exists){P[c]=s.data();ping(c)}})}return P[c]})},
+    top:function(n){return top.slice(0,n)},teams:function(){return teams},
+    rank:function(c){var i=top.findIndex(function(p){return p.code===c});return i<0?null:i+1},
+    on:function(f){subs.push(f)},
+    setNick:function(c,n){return db.collection('players').doc(c).update({nick:n.slice(0,16)})}};
+  db.collection('players').orderBy('aura','desc').limit(10).onSnapshot(function(q){top=q.docs.map(function(d){return d.data()});ping()});
+  db.collection('meta').doc('teams').onSnapshot(function(d){if(d.exists){teams={MaZoo:d.data().MaZoo||0,WiSoo:d.data().WiSoo||0};ping()}});
+  return o};
+var DB=DemoDB;
+function loadFirebase(cb){var cfg=window.HH_FIREBASE;if(!cfg||!navigator.onLine){cb();return}
+  var V='https://www.gstatic.com/firebasejs/10.14.1/',L=['firebase-app-compat.js','firebase-firestore-compat.js'],i=0;
+  (function next(){if(i>=L.length){try{DB=FbDB(cfg)}catch(e){DB=DemoDB}cb();return}var s=document.createElement('script');s.src=V+L[i++];s.onload=next;s.onerror=function(){cb()};document.head.appendChild(s)})()}
 
 /* ============ APP ============ */
 var LV=[['Rookie',0],['Player',200],['Pro',500],['Legend',1000]];
@@ -114,11 +137,10 @@ function start(c){DB.get(c).then(function(p){if(!p){store('hh_code',null);showLo
 function showLogin(){$('app').classList.add('hidden');$('login').classList.remove('hidden')}
 function logout(){store('hh_code',null);me=null;showLogin()}
 
-function rankOf(all,key){var s=all.slice().sort(function(a,b){return b[key]-a[key]});return{list:s,pos:s.findIndex(function(p){return p.code===me.code})+1}}
 
 function render(){
   document.querySelectorAll('.tabs button').forEach(function(b){b.classList.toggle('on',b.dataset.t===tab)});
-  DB.get(me.code).then(function(p){me=p;return DB.all()}).then(function(all){
+  DB.get(me.code).then(function(p){me=p;
     var h='';
     if(tab==='barhams'){
       h+='<div class="card hero"><div class="big" id="bal">'+me.barhams+'</div><small>YOUR BARHAMS</small></div>';
@@ -127,12 +149,12 @@ function render(){
       h+='<div class="card mut">Earn Barhams by winning stations. Spend them at the event shop. Staff tap your wristband to add or deduct.</div>';
     }
     if(tab==='aura'){
-      var l=lvl(me.aura),r=rankOf(all,'aura'),mz=0,wz=0;all.forEach(function(p){if(p.team==='MaZoo')mz+=p.aura;else wz+=p.aura});
-      h+='<div class="card hero"><div class="big">'+me.aura+'</div><small>AURA SCORE &middot; '+l.name.toUpperCase()+' &middot; RANK #'+r.pos+'</small>';
+      var l=lvl(me.aura),pos=DB.rank(me.code),T=DB.teams(),mz=T.MaZoo,wz=T.WiSoo,list=DB.top(10);
+      h+='<div class="card hero"><div class="big">'+me.aura+'</div><small>AURA SCORE &middot; '+l.name.toUpperCase()+(pos?' &middot; RANK #'+pos:' &middot; KEEP CLIMBING')+'</small>';
       h+='<div class="bar"><i style="width:'+l.pct+'%"></i></div><div class="mut" style="margin-top:6px;color:#fff">'+(l.next?l.left+' to '+l.next:'Top level reached')+'</div></div>';
       h+='<h2>TEAM BATTLE</h2><div class="card vs"><div class="t mz"><b>'+mz+'</b>MaZoo</div><div class="mut">VS</div><div class="t wz"><b>'+wz+'</b>WiSoo</div></div>';
-      h+='<h2>LEADERBOARD</h2><div class="card">'+r.list.slice(0,10).map(function(p,i){return'<div class="row'+(p.code===me.code?' me':'')+'"><div class="n">'+(i+1)+'</div><div class="nm">'+esc(p.nick)+' <span class="tag">'+p.team+'</span></div><div class="v">'+p.aura+'</div></div>'}).join('');
-      if(r.pos>10)h+='<div class="row me"><div class="n">'+r.pos+'</div><div class="nm">'+esc(me.nick)+'</div><div class="v">'+me.aura+'</div></div>';
+      h+='<h2>LEADERBOARD</h2><div class="card">'+list.map(function(p,i){return'<div class="row'+(p.code===me.code?' me':'')+'"><div class="n">'+(i+1)+'</div><div class="nm">'+esc(p.nick)+' <span class="tag">'+p.team+'</span></div><div class="v">'+p.aura+'</div></div>'}).join('');
+      if(!pos)h+='<div class="row me"><div class="n">&middot;</div><div class="nm">'+esc(me.nick)+'</div><div class="v">'+me.aura+'</div></div>';
       h+='</div>';
     }
     if(tab==='events'){
@@ -141,8 +163,8 @@ function render(){
       h+='<a class="btn alt" href="/#portfolio">Watch event videos</a>';
     }
     if(tab==='profile'){
-      var r2=rankOf(all,'aura');
-      var B=[['First tap',true],['100 Barhams',me.barhams>=100],['Level: Player',me.aura>=200],['Level: Pro',me.aura>=500],['Top 10',r2.pos<=10],['Legend',me.aura>=1000]];
+      var pos2=DB.rank(me.code);
+      var B=[['First tap',true],['100 Barhams',me.barhams>=100],['Level: Player',me.aura>=200],['Level: Pro',me.aura>=500],['Top 10',!!pos2],['Legend',me.aura>=1000]];
       h+='<div class="card"><div class="mut">NICKNAME</div><input id="nick" maxlength="16" value="'+esc(me.nick)+'"><button class="btn" onclick="saveNick()">Save nickname</button><div class="row"><div class="nm">Team</div><div class="v">'+me.team+'</div></div><div class="row"><div class="nm">Wristband</div><div class="v">'+me.code+'</div></div></div>';
       h+='<h2>BADGES</h2><div class="card"><div class="badges">'+B.map(function(b){return'<div class="badge'+(b[1]?'':' lock')+'">'+(b[1]?'&#9989; ':'&#128274; ')+b[0]+'</div>'}).join('')+'</div></div>';
       h+='<div class="card mut">Privacy: your wristband stores only a code. Your nickname, Barhams and Aura Score are shown to other players. Use a nickname, not your full name.</div>';
@@ -163,7 +185,7 @@ var pend=null;DB.on(function(code){if(!me||document.activeElement&&document.acti
 (function(){var q=null;try{q=new URLSearchParams(location.search).get('w')}catch(e){}
   var c=q||store('hh_code');
   if(q){try{history.replaceState(null,'',location.pathname)}catch(e){}}
-  if(c)start(c.toUpperCase());else showLogin();
+  loadFirebase(function(){if(c)start(c.toUpperCase());else showLogin()});
   if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(function(){})})();
 </script>
 </body></html>

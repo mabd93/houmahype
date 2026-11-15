@@ -1,0 +1,23 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isStaff() { return request.auth != null && exists(/databases/$(database)/documents/staff/$(request.auth.uid)); }
+
+    // Players: anyone can read (leaderboard). Only staff can change points. Anyone can change ONLY the nickname (max 16 chars).
+    match /players/{code} {
+      allow read: if true;
+      allow create, delete: if isStaff();
+      allow update: if isStaff()
+        || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nick'])
+            && request.resource.data.nick is string && request.resource.data.nick.size() <= 16);
+    }
+    match /meta/{doc} {
+      allow read: if true;
+      allow write: if isStaff();
+    }
+    match /staff/{uid} {
+      allow read: if request.auth != null && request.auth.uid == uid;
+      allow write: if false;   // add staff by hand in the Firebase console
+    }
+  }
+}

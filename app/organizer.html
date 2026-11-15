@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>HoumaHype Organizer</title><meta name="robots" content="noindex">
+<script src="firebase-config.js"></script>
+<style>
+:root{--bg:#081230;--panel:#0f1d46;--line:rgba(255,255,255,.16);--rd:#ff3b4e;--bl:#2f7bff;--yl:#ffd23f;--gn:#35d07f}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#fff;font-family:system-ui,sans-serif;max-width:520px;margin:0 auto;padding:14px 14px 60px}
+h1{font-size:22px;margin:6px 0}h2{font-size:15px;margin:18px 0 8px;color:var(--yl);letter-spacing:.06em}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;margin:10px 0}
+input{width:100%;padding:13px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.08);color:#fff;font-size:16px;margin:6px 0}
+button{padding:13px;border-radius:12px;border:0;font-weight:800;font-size:15px;cursor:pointer;color:#fff;background:var(--bl)}
+button.rd{background:var(--rd)}button.gn{background:var(--gn);color:#042}button.gh{background:transparent;border:1px solid var(--line)}
+.grid{display:grid;grid-template-columns:repeat(4,1fr);gap:8px}.two{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.big{font-size:34px;font-weight:800;color:var(--yl)}.mut{color:#9fb0d6;font-size:13px}.hidden{display:none}
+#msg{position:sticky;top:0;padding:10px;border-radius:10px;margin:6px 0;font-weight:700}.ok{background:#0c3b25;color:#9ff0c2}.er{background:#4a1018;color:#ffb3bb}
+</style></head><body>
+<h1>HOUMAHYPE ORGANIZER</h1>
+<div id="msg" class="hidden"></div>
+<div id="nocfg" class="card hidden">Firebase is not connected yet. Fill in <b>firebase-config.js</b> first (see SETUP.md).</div>
+
+<div id="login" class="card hidden">
+  <div class="mut">Staff sign-in</div>
+  <input id="em" type="email" placeholder="Staff email" autocomplete="username">
+  <input id="pw" type="password" placeholder="Password" autocomplete="current-password">
+  <button class="rd" style="width:100%" onclick="signIn()">Sign in</button>
+</div>
+
+<div id="main" class="hidden">
+  <h2>1. FIND PLAYER</h2>
+  <div class="card">
+    <input id="code" placeholder="Wristband code, e.g. HH-007" autocapitalize="characters">
+    <div class="two"><button onclick="load($('code').value)">Open player</button><button class="gh" id="nfcbtn" onclick="scan()">Scan wristband (Android)</button></div>
+    <div class="mut" style="margin-top:6px">iPhone: type the code printed on the band.</div>
+  </div>
+
+  <div id="pl" class="card hidden">
+    <div class="mut" id="who"></div>
+    <div class="two" style="margin-top:8px"><div><div class="mut">BARHAMS</div><div class="big" id="bb">0</div></div><div><div class="mut">AURA</div><div class="big" id="aa">0</div></div></div>
+  </div>
+
+  <div id="act" class="hidden">
+    <h2>2. BARHAMS</h2><div class="card"><div class="grid" id="bpl"></div><div class="grid" id="bmi" style="margin-top:8px"></div></div>
+    <h2>3. AURA POINTS</h2><div class="card"><div class="grid" id="apl"></div><div class="grid" id="ami" style="margin-top:8px"></div></div>
+    <input id="why" placeholder="Reason (optional), e.g. Station 4 win">
+  </div>
+
+  <h2>SET UP THE EVENT</h2>
+  <div class="card">
+    <div class="mut">Create players HH-001 to HH-N (skips existing ones), alternating MaZoo / WiSoo, each with a starting Barhams balance.</div>
+    <div class="two"><input id="cn" type="number" value="300" min="1" max="450"><input id="cb" type="number" value="50" min="0"></div>
+    <button class="gn" style="width:100%" onclick="seed()">Create players</button>
+  </div>
+  <div class="card">
+    <div class="mut">Write a wristband (Android Chrome only): puts the player link on the chip.</div>
+    <input id="wc" placeholder="Code to write, e.g. HH-007" autocapitalize="characters">
+    <button class="gh" style="width:100%" onclick="writeTag()">Hold band to phone and write</button>
+  </div>
+  <button class="gh" style="width:100%;margin-top:14px" onclick="firebase.auth().signOut()">Sign out</button>
+</div>
+
+<script>
+function $(i){return document.getElementById(i)}
+function say(t,ok){var m=$('msg');m.textContent=t;m.className=ok?'ok':'er';clearTimeout(say.t);say.t=setTimeout(function(){m.className='hidden'},3500)}
+var cur=null,db,auth;
+if(!window.HH_FIREBASE){$('nocfg').classList.remove('hidden')}else{
+  var V='https://www.gstatic.com/firebasejs/10.14.1/',L=['firebase-app-compat.js','firebase-auth-compat.js','firebase-firestore-compat.js'],i=0;
+  (function next(){if(i>=L.length){init();return}var s=document.createElement('script');s.src=V+L[i++];s.onload=next;s.onerror=function(){say('Could not load Firebase. Check your internet.')};document.head.appendChild(s)})()}
+function init(){firebase.initializeApp(window.HH_FIREBASE);db=firebase.firestore();auth=firebase.auth();
+  [5,10,20,50].forEach(function(n){['b','a'].forEach(function(k){
+    var p=document.createElement('button');p.className='gn';p.textContent='+'+n;p.onclick=function(){add(k,n)};$(k+'pl').appendChild(p);
+    var m=document.createElement('button');m.className='rd';m.textContent='-'+n;m.onclick=function(){add(k,-n)};$(k+'mi').appendChild(m)})});
+  auth.onAuthStateChanged(function(u){if(!u){$('login').classList.remove('hidden');$('main').classList.add('hidden');return}
+    db.collection('staff').doc(u.uid).get().then(function(d){if(!d.exists){say('This account is not staff. Ask the admin to add you.');auth.signOut();return}
+      $('login').classList.add('hidden');$('main').classList.remove('hidden')}).catch(function(){say('Could not check staff access.');auth.signOut()})})}
+function signIn(){auth.signInWithEmailAndPassword($('em').value.trim(),$('pw').value).catch(function(e){say('Sign-in failed: '+e.code)})}
+function show(p){cur=p.code;$('who').textContent=p.code+' · '+p.nick+' · '+p.team;$('bb').textContent=p.barhams;$('aa').textContent=p.aura;$('pl').classList.remove('hidden');$('act').classList.remove('hidden')}
+function load(c){c=(c||'').trim().toUpperCase();if(!c)return;db.collection('players').doc(c).get().then(function(d){if(!d.exists){say('No player '+c);return}show(d.data())}).catch(function(e){say('Error: '+e.code)})}
+function add(kind,n){if(!cur){say('Open a player first');return}
+  var ref=db.collection('players').doc(cur),tref=db.collection('meta').doc('teams'),why=$('why').value.trim().slice(0,40);
+  db.runTransaction(function(tx){return tx.get(ref).then(function(d){var p=d.data();
+    var upd={},label=why||(kind==='b'?'Barhams':'Aura');
+    if(kind==='b'){upd.barhams=Math.max(0,p.barhams+n)}else{upd.aura=Math.max(0,p.aura+n)}
+    var applied=(kind==='b'?upd.barhams-p.barhams:upd.aura-p.aura);
+    var txl=(p.tx||[]);txl.unshift({t:label+(kind==='b'?'':' (Aura)'),d:applied,ts:Date.now()});upd.tx=txl.slice(0,20);
+    tx.update(ref,upd);
+    if(kind==='a'&&applied){var inc={};inc[p.team]=firebase.firestore.FieldValue.increment(applied);tx.set(tref,inc,{merge:true})}
+    return Object.assign({},p,upd)})}).then(function(p){show(p);say((n>0?'+':'')+n+(kind==='b'?' Barhams':' Aura')+' done',true)}).catch(function(e){say('Failed: '+(e.code||e.message))})}
+function seed(){var n=Math.min(450,+$('cn').value||0),b=+$('cb').value||0;if(!n)return;
+  var col=db.collection('players'),batch=db.batch(),codes=[];for(var i=1;i<=n;i++)codes.push('HH-'+('00'+i).slice(-3));
+  Promise.all(codes.map(function(c){return col.doc(c).get()})).then(function(ds){var made=0;
+    ds.forEach(function(d,i){if(d.exists)return;made++;batch.set(col.doc(codes[i]),{code:codes[i],nick:'Player '+(i+1),team:i%2?'WiSoo':'MaZoo',barhams:b,aura:0,tx:b?[{t:'Welcome bonus',d:b,ts:Date.now()}]:[]})});
+    batch.set(db.collection('meta').doc('teams'),{MaZoo:0,WiSoo:0},{merge:true});
+    return batch.commit().then(function(){say('Created '+made+' players',true)})}).catch(function(e){say('Failed: '+(e.code||e.message))})}
+function scan(){if(!('NDEFReader' in window)){say('NFC scanning needs Android Chrome. Type the code instead.');return}
+  var r=new NDEFReader();r.scan().then(function(){say('Hold a wristband to the phone',true);r.onreading=function(e){var rec=e.message.records[0];if(!rec)return;var t=new TextDecoder().decode(rec.data),m=t.match(/[?&]w=([A-Za-z0-9-]+)/);var c=m?m[1]:t.trim();$('code').value=c.toUpperCase();load(c)}}).catch(function(e){say('NFC error: '+e.name)})}
+function writeTag(){var c=$('wc').value.trim().toUpperCase();if(!c)return;if(!('NDEFReader' in window)){say('Writing from the browser needs Android Chrome. On iPhone use the NFC Tools app and write this link: https://houmahype.com/app/?w='+c);return}
+  new NDEFReader().write({records:[{recordType:'url',data:'https://houmahype.com/app/?w='+c}]}).then(function(){say('Written: '+c,true)}).catch(function(e){say('Write failed: '+e.name)})}
+</script></body></html>
