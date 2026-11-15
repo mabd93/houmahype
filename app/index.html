@@ -1,0 +1,169 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>HoumaHype App</title>
+<meta name="theme-color" content="#081230">
+<link rel="manifest" href="manifest.json">
+<link rel="apple-touch-icon" href="icon-192.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Anton&display=swap">
+<style>
+:root{--bg:#081230;--panel:#0f1d46;--line:rgba(255,255,255,.14);--ink:#fff;--mut:#9fb0d6;--rd:#ff3b4e;--bl:#2f7bff;--yl:#ffd23f;--gn:#35d07f}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;min-height:100%}
+body{padding-top:env(safe-area-inset-top);padding-bottom:calc(76px + env(safe-area-inset-bottom));max-width:520px;margin:0 auto;background:radial-gradient(120% 60% at 0% 0%,rgba(255,59,78,.25),transparent 60%),radial-gradient(120% 60% at 100% 10%,rgba(47,123,255,.3),transparent 60%),var(--bg);background-attachment:fixed}
+h1,h2,.big,.tabs b{font-family:Anton,Impact,sans-serif;font-weight:400;letter-spacing:.03em}
+.top{display:flex;justify-content:space-between;align-items:center;padding:16px 18px 6px}
+.logo{font-family:Anton,Impact,sans-serif;font-size:22px;letter-spacing:.05em}.logo i{font-style:normal;color:var(--yl)}
+.live{font-size:11px;font-weight:800;background:var(--rd);padding:4px 10px;border-radius:20px;letter-spacing:.08em;animation:bl 1.6s infinite}
+@keyframes bl{50%{opacity:.55}}
+.demo{font-size:11px;color:var(--yl);text-align:center;padding:2px 18px 6px}
+main{padding:6px 16px}
+.card{background:var(--panel);border:1px solid var(--line);border-radius:18px;padding:16px;margin:12px 0}
+.hero{text-align:center;padding:26px 16px;background:linear-gradient(135deg,rgba(255,59,78,.35),rgba(47,123,255,.4));border:2px solid #fff;box-shadow:6px 6px 0 var(--rd),-6px -6px 0 var(--bl)}
+.hero .big{font-size:76px;line-height:1;color:var(--yl)}
+.hero small{display:block;color:#fff;opacity:.85;letter-spacing:.12em;font-size:12px;font-weight:800;margin-top:6px}
+h2{font-size:22px;margin:18px 2px 6px}
+.row{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line)}.row:first-child{border-top:0}
+.row .n{width:26px;text-align:center;font-family:Anton;color:var(--mut)}
+.row .nm{flex:1;font-weight:600}.row .v{font-family:Anton;font-size:18px;color:var(--yl)}
+.row.me{background:rgba(255,210,63,.12);border-radius:12px;padding:10px 8px;margin:2px -8px}
+.pos{color:var(--gn)}.neg{color:var(--rd)}
+.bar{height:12px;background:rgba(255,255,255,.12);border-radius:8px;overflow:hidden;margin-top:10px}.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--rd),var(--yl));transition:width .6s}
+.vs{display:grid;grid-template-columns:1fr auto 1fr;gap:8px;align-items:center;text-align:center}
+.vs .t{border-radius:14px;padding:14px 6px}.vs .t b{display:block;font-family:Anton;font-size:30px}
+.mz{background:rgba(255,59,78,.3);border:1px solid var(--rd)}.wz{background:rgba(47,123,255,.3);border:1px solid var(--bl)}
+.btn{display:block;width:100%;text-align:center;padding:14px;border-radius:14px;border:0;background:var(--rd);color:#fff;font-weight:800;font-size:15px;text-decoration:none;box-shadow:4px 4px 0 var(--bl);cursor:pointer}
+.btn.alt{background:transparent;border:2px solid var(--line);box-shadow:none;color:var(--ink)}
+input{width:100%;padding:14px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.08);color:#fff;font-size:16px;margin:8px 0}
+.tabs{position:fixed;left:0;right:0;bottom:0;max-width:520px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);background:rgba(8,18,48,.96);backdrop-filter:blur(10px);border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom))}
+.tabs button{background:none;border:0;color:var(--mut);padding:8px 2px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;font-weight:600;cursor:pointer}
+.tabs button span{font-size:22px}.tabs button.on{color:var(--yl)}
+.flash{animation:fl .9s}@keyframes fl{0%{background:rgba(255,210,63,.5)}100%{background:transparent}}
+.tag{display:inline-block;font-size:11px;font-weight:800;padding:3px 9px;border-radius:12px;background:rgba(255,255,255,.14);margin-right:6px}
+.badges{display:flex;flex-wrap:wrap;gap:8px;margin-top:8px}.badge{background:rgba(255,255,255,.1);border-radius:12px;padding:8px 12px;font-size:13px}.badge.lock{opacity:.35}
+.cd{display:flex;gap:8px;justify-content:center;margin:8px 0}.cd div{background:rgba(0,0,0,.3);border-radius:12px;padding:10px 12px;min-width:62px;text-align:center}.cd b{font-family:Anton;font-size:30px;display:block}.cd span{font-size:10px;color:var(--mut);letter-spacing:.1em}
+.login{padding:40px 22px;text-align:center}.login h1{font-size:44px;margin:10px 0}
+.hidden{display:none!important}.mut{color:var(--mut);font-size:13px}
+</style></head><body>
+
+<div id="login" class="login hidden">
+  <div class="logo" style="font-size:30px">HOUMA<i>HYPE</i></div>
+  <h1>TAP IN.</h1>
+  <p class="mut">Tap your wristband on the back of your phone, or type the code printed on it.</p>
+  <input id="code" placeholder="Wristband code, e.g. HH-007" autocapitalize="characters" autocomplete="off">
+  <button class="btn" onclick="doLogin(document.getElementById('code').value)">Enter the arena</button>
+  <p id="lerr" class="neg" style="min-height:20px"></p>
+  <button class="btn alt" onclick="doLogin('HH-007')">Try the demo</button>
+</div>
+
+<div id="app" class="hidden">
+  <div class="top"><div class="logo">HOUMA<i>HYPE</i></div><div class="live" id="livetag">&#9679; LIVE</div></div>
+  <div class="demo" id="demonote"></div>
+  <main id="view"></main>
+  <nav class="tabs">
+    <button data-t="barhams"><span>&#129689;</span>Barhams</button>
+    <button data-t="aura"><span>&#9889;</span>Aura Score</button>
+    <button data-t="events"><span>&#127942;</span>Events</button>
+    <button data-t="profile"><span>&#128100;</span>Profile</button>
+  </nav>
+</div>
+
+<script>
+/* ============ DATA LAYER ============
+   The app only talks to `DB`. Right now DB is a DEMO (fake players, simulated live changes).
+   To go live, replace DB with an adapter that has the same 4 methods:
+     DB.demo            -> false
+     DB.get(code)       -> Promise<player|null>   player = {code,nick,team,barhams,aura,tx:[{t,d,ts}]}
+     DB.all()           -> Promise<player[]>
+     DB.on(fn)          -> calls fn() whenever any player changes (realtime listener)
+     DB.setNick(code,n) -> Promise
+   (Firebase Firestore or Supabase Realtime both fit this shape.) */
+var DB=(function(){
+  var NAMES=['Falcon','Blaze','Nova','Turbo','Ghost','Rocket','Viper','Storm','Echo','Titan','Comet','Rogue'];
+  var P={},subs=[];
+  for(var i=0;i<24;i++){var c='HH-'+('00'+(i+1)).slice(-3);P[c]={code:c,nick:NAMES[i%12]+(i>11?' II':''),team:i%2?'WiSoo':'MaZoo',barhams:60+((i*37)%140),aura:120+((i*83)%760),tx:[{t:'Welcome bonus',d:50,ts:Date.now()-36e5}]}}
+  P['HH-007'].nick='Player 7';
+  var codes=Object.keys(P);
+  setInterval(function(){var p=P[codes[Math.floor(Math.random()*codes.length)]],a=[5,10,15,20][Math.floor(Math.random()*4)];
+    p.aura+=a;var b=Math.random()<.5?[10,20,5][Math.floor(Math.random()*3)]:0;
+    if(b){p.barhams+=b;p.tx.unshift({t:'Station win',d:b,ts:Date.now()})}
+    subs.forEach(function(f){f(p.code)})},3500);
+  return{demo:true,
+    get:function(c){c=(c||'').trim().toUpperCase();return Promise.resolve(P[c]||null)},
+    all:function(){return Promise.resolve(codes.map(function(c){return P[c]}))},
+    on:function(f){subs.push(f)},
+    setNick:function(c,n){P[c].nick=n;subs.forEach(function(f){f(c)});return Promise.resolve()}}
+})();
+
+/* ============ APP ============ */
+var LV=[['Rookie',0],['Player',200],['Pro',500],['Legend',1000]];
+var EVENT4=new Date('2026-12-04T16:00:00+02:00');
+var FORM='https://docs.google.com/forms/d/e/1FAIpQLSdvco3ygC1QWl_FF5PHsXBNhUnm9QDb0ICy5zIFxjpw72dOHA/viewform';
+var me=null,tab='barhams',view=document.getElementById('view');
+function $(i){return document.getElementById(i)}
+function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function store(k,v){try{if(v===undefined)return localStorage.getItem(k);if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(e){return null}}
+function lvl(a){var i=0;LV.forEach(function(l,j){if(a>=l[1])i=j});var nx=LV[i+1];return{name:LV[i][0],next:nx?nx[0]:null,pct:nx?Math.round((a-LV[i][1])/(nx[1]-LV[i][1])*100):100,left:nx?nx[1]-a:0}}
+function ago(ts){var s=Math.floor((Date.now()-ts)/1000);return s<60?'just now':s<3600?Math.floor(s/60)+' min ago':Math.floor(s/3600)+' h ago'}
+
+function doLogin(c){DB.get(c).then(function(p){if(!p){$('lerr').textContent='Code not found. Check the number on your wristband.';return}store('hh_code',p.code);start(p.code)})}
+function start(c){DB.get(c).then(function(p){if(!p){store('hh_code',null);showLogin();return}me=p;$('login').classList.add('hidden');$('app').classList.remove('hidden');$('demonote').textContent=DB.demo?'DEMO MODE: sample players and simulated live scores':'';render()})}
+function showLogin(){$('app').classList.add('hidden');$('login').classList.remove('hidden')}
+function logout(){store('hh_code',null);me=null;showLogin()}
+
+function rankOf(all,key){var s=all.slice().sort(function(a,b){return b[key]-a[key]});return{list:s,pos:s.findIndex(function(p){return p.code===me.code})+1}}
+
+function render(){
+  document.querySelectorAll('.tabs button').forEach(function(b){b.classList.toggle('on',b.dataset.t===tab)});
+  DB.get(me.code).then(function(p){me=p;return DB.all()}).then(function(all){
+    var h='';
+    if(tab==='barhams'){
+      h+='<div class="card hero"><div class="big" id="bal">'+me.barhams+'</div><small>YOUR BARHAMS</small></div>';
+      h+='<h2>RECENT ACTIVITY</h2><div class="card">';
+      h+=me.tx.slice(0,8).map(function(t){return'<div class="row"><div class="nm">'+esc(t.t)+'<div class="mut">'+ago(t.ts)+'</div></div><div class="v '+(t.d>0?'pos':'neg')+'">'+(t.d>0?'+':'')+t.d+'</div></div>'}).join('')+'</div>';
+      h+='<div class="card mut">Earn Barhams by winning stations. Spend them at the event shop. Staff tap your wristband to add or deduct.</div>';
+    }
+    if(tab==='aura'){
+      var l=lvl(me.aura),r=rankOf(all,'aura'),mz=0,wz=0;all.forEach(function(p){if(p.team==='MaZoo')mz+=p.aura;else wz+=p.aura});
+      h+='<div class="card hero"><div class="big">'+me.aura+'</div><small>AURA SCORE &middot; '+l.name.toUpperCase()+' &middot; RANK #'+r.pos+'</small>';
+      h+='<div class="bar"><i style="width:'+l.pct+'%"></i></div><div class="mut" style="margin-top:6px;color:#fff">'+(l.next?l.left+' to '+l.next:'Top level reached')+'</div></div>';
+      h+='<h2>TEAM BATTLE</h2><div class="card vs"><div class="t mz"><b>'+mz+'</b>MaZoo</div><div class="mut">VS</div><div class="t wz"><b>'+wz+'</b>WiSoo</div></div>';
+      h+='<h2>LEADERBOARD</h2><div class="card">'+r.list.slice(0,10).map(function(p,i){return'<div class="row'+(p.code===me.code?' me':'')+'"><div class="n">'+(i+1)+'</div><div class="nm">'+esc(p.nick)+' <span class="tag">'+p.team+'</span></div><div class="v">'+p.aura+'</div></div>'}).join('');
+      if(r.pos>10)h+='<div class="row me"><div class="n">'+r.pos+'</div><div class="nm">'+esc(me.nick)+'</div><div class="v">'+me.aura+'</div></div>';
+      h+='</div>';
+    }
+    if(tab==='events'){
+      h+='<div class="card hero"><small style="margin:0 0 6px">NEXT EVENT</small><h2 style="margin:0;font-size:30px">BARHOUMATIC EVENT IV</h2><div class="mut" style="color:#fff">El-Le’ba (The Game) &middot; 4 Dec 2026 &middot; Club 7, Maadi</div><div class="cd" id="cd"></div><a class="btn" target="_blank" rel="noopener" href="'+FORM+'">Register for Barhoumatic Event IV</a></div>';
+      h+='<h2>PAST EVENTS</h2><div class="card">'+[['Barhoumatic Iftar III','Ramadan 2026'],['Event III: Squid Game','Dec 2025'],['Barhoumatic Iftar II','Ramadan 2025'],['Barhoumatic Event II','Dec 2024'],['Barhoumatic Iftar I','Ramadan 2024'],['Barhoumatic Event I','Dec 2023']].map(function(e){return'<div class="row"><div class="nm">'+e[0]+'</div><div class="mut">'+e[1]+'</div></div>'}).join('')+'</div>';
+      h+='<a class="btn alt" href="/#portfolio">Watch event videos</a>';
+    }
+    if(tab==='profile'){
+      var r2=rankOf(all,'aura');
+      var B=[['First tap',true],['100 Barhams',me.barhams>=100],['Level: Player',me.aura>=200],['Level: Pro',me.aura>=500],['Top 10',r2.pos<=10],['Legend',me.aura>=1000]];
+      h+='<div class="card"><div class="mut">NICKNAME</div><input id="nick" maxlength="16" value="'+esc(me.nick)+'"><button class="btn" onclick="saveNick()">Save nickname</button><div class="row"><div class="nm">Team</div><div class="v">'+me.team+'</div></div><div class="row"><div class="nm">Wristband</div><div class="v">'+me.code+'</div></div></div>';
+      h+='<h2>BADGES</h2><div class="card"><div class="badges">'+B.map(function(b){return'<div class="badge'+(b[1]?'':' lock')+'">'+(b[1]?'&#9989; ':'&#128274; ')+b[0]+'</div>'}).join('')+'</div></div>';
+      h+='<div class="card mut">Privacy: your wristband stores only a code. Your nickname, Barhams and Aura Score are shown to other players. Use a nickname, not your full name.</div>';
+      h+='<button class="btn alt" onclick="logout()">Log out</button>';
+    }
+    view.innerHTML=h;
+    if(tab==='events')tickCd();
+  });
+}
+function saveNick(){var n=$('nick').value.trim().replace(/[<>]/g,'');if(!n)return;DB.setNick(me.code,n).then(function(){var b=document.querySelector('.btn');b.textContent='Saved ✓'})}
+function tickCd(){var el=$('cd');if(!el||tab!=='events')return;var d=Math.max(0,EVENT4-Date.now()),s=Math.floor(d/1000);
+  el.innerHTML=[['DAYS',Math.floor(s/86400)],['HRS',Math.floor(s%86400/3600)],['MIN',Math.floor(s%3600/60)],['SEC',s%60]].map(function(x){return'<div><b>'+x[1]+'</b><span>'+x[0]+'</span></div>'}).join('');setTimeout(tickCd,1000)}
+
+document.querySelectorAll('.tabs button').forEach(function(b){b.onclick=function(){tab=b.dataset.t;render();scrollTo(0,0)}});
+var pend=null;DB.on(function(code){if(!me||document.activeElement&&document.activeElement.tagName==='INPUT')return;clearTimeout(pend);pend=setTimeout(function(){if(tab==='events'||tab==='profile'&&code!==me.code)return;render()},400)});
+
+/* start: wristband tap opens /app/?w=HH-007 */
+(function(){var q=null;try{q=new URLSearchParams(location.search).get('w')}catch(e){}
+  var c=q||store('hh_code');
+  if(q){try{history.replaceState(null,'',location.pathname)}catch(e){}}
+  if(c)start(c.toUpperCase());else showLogin();
+  if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(function(){})})();
+</script>
+</body></html>
