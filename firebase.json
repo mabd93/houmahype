@@ -1,0 +1,22 @@
+{
+  "hosting": {
+    "public": ".",
+    "ignore": [
+      "firebase.json",
+      "**/.*",
+      "**/node_modules/**",
+      "netlify.toml",
+      "README.md",
+      "sheet-sync/**",
+      "app/SETUP.md",
+      "app/firestore.rules",
+      ".github/**"
+    ],
+    "headers": [
+      {
+        "source": "**/*.@(html|js|json)",
+        "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
+      }
+    ]
+  }
+}
