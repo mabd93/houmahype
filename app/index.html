@@ -118,7 +118,7 @@ var FbDB=function(cfg){
   return o};
 var DB=DemoDB;
 function loadFirebase(cb){var cfg=window.HH_FIREBASE;if(!cfg||!navigator.onLine){cb();return}
-  var V='https://www.gstatic.com/firebasejs/10.14.1/',L=['firebase-app-compat.js','firebase-firestore-compat.js'],i=0;
+  var V='https://www.gstatic.com/firebasejs/10.14.1/',L=['firebase-app-compat.js','firebase-firestore-compat.js'].concat(window.HH_BAND?['firebase-auth-compat.js']:[]),i=0;
   (function next(){if(i>=L.length){try{DB=FbDB(cfg)}catch(e){DB=DemoDB}cb();return}var s=document.createElement('script');s.src=V+L[i++];s.onload=next;s.onerror=function(){cb()};document.head.appendChild(s)})()}
 
 /* ============ APP ============ */
@@ -181,11 +181,21 @@ function tickCd(){var el=$('cd');if(!el||tab!=='events')return;var d=Math.max(0,
 document.querySelectorAll('.tabs button').forEach(function(b){b.onclick=function(){tab=b.dataset.t;render();scrollTo(0,0)}});
 var pend=null;DB.on(function(code){if(!me||document.activeElement&&document.activeElement.tagName==='INPUT')return;clearTimeout(pend);pend=setTimeout(function(){if(tab==='events'||tab==='profile'&&code!==me.code)return;render()},400)});
 
-/* start: wristband tap opens /app/?w=HH-007 */
+/* A signed-in staff member tapping a band goes straight to the organizer view of that player */
+function staffRedirect(code,next){
+  if(!code||!window.firebase||!firebase.auth||!window.HH_FIREBASE){next();return}
+  var done=false;function go(){if(!done){done=true;next()}}
+  setTimeout(go,3000);
+  try{var un=firebase.auth().onAuthStateChanged(function(u){un();
+    if(!u){go();return}
+    firebase.firestore().collection('staff').doc(u.uid).get().then(function(d){
+      if(d.exists&&!done){done=true;location.replace('organizer.html?c='+encodeURIComponent(code.toUpperCase()))}else go()}).catch(go)})}
+  catch(e){go()}}
+/* start: wristband tap opens /app/?w=M001 */
 (function(){var q=null;try{q=new URLSearchParams(location.search).get('w')}catch(e){}
-  var c=q||store('hh_code');
+  var c=q||store('hh_code');window.HH_BAND=q;
   if(q){try{history.replaceState(null,'',location.pathname)}catch(e){}}
-  loadFirebase(function(){if(c)start(c.toUpperCase());else showLogin()});
+  loadFirebase(function(){staffRedirect(q,function(){if(c)start(c.toUpperCase());else showLogin()})});
   if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(function(){})})();
 </script>
 </body></html>
