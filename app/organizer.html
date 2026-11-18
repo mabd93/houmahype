@@ -36,7 +36,7 @@ button.rd{background:var(--rd)}button.gn{background:var(--gn);color:#042}button.
   </div>
 
   <div id="pl" class="card hidden">
-    <div id="pname" style="font-size:22px;font-weight:800"></div><div class="mut" id="who"></div>
+    <div id="pname" style="font-size:22px;font-weight:800"></div><div class="mut" id="who"></div><div id="sm" style="margin-top:6px;font-size:18px;font-weight:800;color:var(--yl)"></div>
     <div class="two" style="margin-top:8px"><div><div class="mut">BARHAMS</div><div class="big" id="bb">0</div></div><div><div class="mut">AURA</div><div class="big" id="aa">0</div></div></div>
   </div>
 
@@ -59,7 +59,8 @@ button.rd{background:var(--rd)}button.gn{background:var(--gn);color:#042}button.
   <h2>WRITE A WRISTBAND</h2>
   <div class="card">
     <div class="mut">Android Chrome only: puts the player link on the chip. On iPhone use the NFC Tools app and write the link https://houmahype.com/app/?w=CODE (for example ?w=M001).</div>
-    <input id="wc" placeholder="Code to write, e.g. M001" autocapitalize="characters">
+    <input id="wc" placeholder="Code to write, e.g. M001" autocapitalize="characters" oninput="wInfo()">
+    <div id="wi" style="margin:8px 0;font-weight:700"></div>
     <button class="gh" style="width:100%" onclick="writeTag()">Hold band to phone and write</button>
   </div>
   </div>
@@ -108,7 +109,8 @@ function applyRole(){
 function custom(kind,sign){var n=Math.round(+$(kind==='b'?'bcv':'acv').value);if(!n||n<1||n>100000){say('Type a whole number from 1 to 100000');return}
   $(kind==='b'?'bcv':'acv').value='';add(kind,sign*n)}
 function signIn(){auth.signInWithEmailAndPassword($('em').value.trim(),$('pw').value).catch(function(e){say('Sign-in failed: '+e.code)})}
-function show(p){cur=p.code;curP=p;$('twinfo').textContent=(p.teamName?p.teamName+' ('+(p.camp||p.team)+')':'')+(isGL&&me.station?' · '+me.station:'');$('pname').textContent=(curPriv&&curPriv.name)||p.nick;$('who').textContent=[p.code,p.teamName||p.team,p.camp,p.color].filter(Boolean).join(' · ');$('bb').textContent=p.barhams;$('aa').textContent=p.aura;$('pl').classList.remove('hidden');$('act').classList.remove('hidden')}
+function sm(v){if(!v)return '';var t=(v.tshirt||'').trim(),m=(v.meal||'').trim();return (t?'HOODIE '+t:'HOODIE: not set')+'  ·  '+(m?'MEAL '+m:'MEAL: not set')}
+function show(p){cur=p.code;curP=p;$('twinfo').textContent=(p.teamName?p.teamName+' ('+(p.camp||p.team)+')':'')+(isGL&&me.station?' · '+me.station:'');$('pname').textContent=(curPriv&&curPriv.name)||p.nick;$('who').textContent=[p.code,p.teamName||p.team,p.camp,p.color].filter(Boolean).join(' · ');$('sm').textContent=sm(curPriv);$('bb').textContent=p.barhams;$('aa').textContent=p.aura;$('pl').classList.remove('hidden');$('act').classList.remove('hidden')}
 function load(c){c=(c||'').trim().toUpperCase();if(!c)return;Promise.all([db.collection('players').doc(c).get(),db.collection('players_private').doc(c).get().catch(function(){return null})]).then(function(r){var d=r[0];if(!d.exists){say('No player '+c);return}curPriv=r[1]&&r[1].exists?r[1].data():null;show(d.data())}).catch(function(e){say('Error: '+e.code)})}
 function add(kind,n){if(!cur){say('Open a player first');return}
   var ref=db.collection('players').doc(cur),tref=db.collection('meta').doc('teams'),why=$('why').value.trim().slice(0,40);
@@ -131,6 +133,8 @@ function teamWin(){if(!cur){say('Open a player first');return}
   }).catch(function(e){say(e.message||'Failed')}).then(function(){$('twbtn').disabled=false})}
 function scan(){if(!('NDEFReader' in window)){say('iPhone: just tap the band on the top of the phone and open the notification. Or type the code.');return}
   var r=new NDEFReader();r.scan().then(function(){say('Hold a wristband to the phone',true);r.onreading=function(e){var rec=e.message.records[0];if(!rec)return;var t=new TextDecoder().decode(rec.data),m=t.match(/[?&]w=([A-Za-z0-9-]+)/);var c=m?m[1]:t.trim();$('code').value=c.toUpperCase();load(c)}}).catch(function(e){say('NFC error: '+e.name)})}
+var wTimer=null;
+function wInfo(){clearTimeout(wTimer);var c=$('wc').value.trim().toUpperCase();var o=$('wi');if(!c){o.textContent='';return}wTimer=setTimeout(function(){Promise.all([db.collection('players').doc(c).get(),db.collection('players_private').doc(c).get().catch(function(){return null})]).then(function(r){if(c!==$('wc').value.trim().toUpperCase())return;if(!r[0].exists){o.textContent='No player '+c;return}var pr=r[1]&&r[1].exists?r[1].data():null,pd=r[0].data();o.innerHTML='';var a=document.createElement('div');a.textContent=((pr&&pr.name)||pd.nick||c)+' · '+(pd.teamName||pd.team||'')+' ('+(pd.camp||'')+')';var b=document.createElement('div');b.style.color='var(--yl)';b.style.fontSize='18px';b.textContent=sm(pr);var u=document.createElement('div');u.className='mut';u.textContent='Link: https://houmahype.com/app/?w='+c;o.appendChild(a);o.appendChild(b);o.appendChild(u)}).catch(function(e){o.textContent='Error: '+(e.code||e)})},300)}
 function writeTag(){var c=$('wc').value.trim().toUpperCase();if(!c)return;if(!('NDEFReader' in window)){say('Writing from the browser needs Android Chrome. On iPhone use the NFC Tools app and write this link: https://houmahype.com/app/?w='+c);return}
   new NDEFReader().write({records:[{recordType:'url',data:'https://houmahype.com/app/?w='+c}]}).then(function(){say('Written: '+c,true)}).catch(function(e){say('Write failed: '+e.name)})}
 </script></body></html>
