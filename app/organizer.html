@@ -62,28 +62,49 @@ button.rd{background:var(--rd)}button.gn{background:var(--gn);color:#042}button.
 <script>
 function $(i){return document.getElementById(i)}
 function say(t,ok){var m=$('msg');m.textContent=t;m.className=ok?'ok':'er';clearTimeout(say.t);say.t=setTimeout(function(){m.className='hidden'},3500)}
-var cur=null,db,auth;
+var cur=null,db,auth,me={},scrOnly=false;
 if(!window.HH_FIREBASE){$('nocfg').classList.remove('hidden')}else{
   var V='https://www.gstatic.com/firebasejs/10.14.1/',L=['firebase-app-compat.js','firebase-auth-compat.js','firebase-firestore-compat.js'],i=0;
   (function next(){if(i>=L.length){init();return}var s=document.createElement('script');s.src=V+L[i++];s.onload=next;s.onerror=function(){say('Could not load Firebase. Check your internet.')};document.head.appendChild(s)})()}
 function init(){firebase.initializeApp(window.HH_FIREBASE);db=firebase.firestore();auth=firebase.auth();
-  [5,10,20,50].forEach(function(n){['b','a'].forEach(function(k){
-    var p=document.createElement('button');p.className='gn';p.textContent='+'+n;p.onclick=function(){add(k,n)};$(k+'pl').appendChild(p);
-    var m=document.createElement('button');m.className='rd';m.textContent='-'+n;m.onclick=function(){add(k,-n)};$(k+'mi').appendChild(m)})});
   auth.onAuthStateChanged(function(u){if(!u){$('login').classList.remove('hidden');$('main').classList.add('hidden');return}
     db.collection('staff').doc(u.uid).get().then(function(d){if(!d.exists){say('This account is not staff. Ask the admin to add you.');auth.signOut();return}
+      me=d.data();applyRole();
       $('login').classList.add('hidden');$('main').classList.remove('hidden')}).catch(function(){say('Could not check staff access.');auth.signOut()})})}
+/* Show only what this staff member's role from the Staff sheet allows. The database rules enforce the same limits. */
+function applyRole(){
+  var sc=me.scope||'Full: Barhams and Score',ro=me.role||'',full=sc==='Full: Barhams and Score';
+  var canB=full||sc==='Barhams only',stl=sc==='Own station only'&&ro==='Station leader',scr=me.canScratch===true;
+  var gl=sc==='Own station only'&&ro==='Game Leader',canA=full||sc==='Score only'||gl;
+  scrOnly=!canB&&scr;
+  ['bpl','bmi','apl','ami'].forEach(function(i){$(i).innerHTML=''});
+  function btn(box,cls,txt,fn){var b=document.createElement('button');b.className=cls;b.textContent=txt;b.onclick=fn;$(box).appendChild(b)}
+  function sect(id,on){var c=$(id).parentNode;c.style.display=on?'':'none';if(c.previousElementSibling)c.previousElementSibling.style.display=on?'':'none'}
+  if(canB||scr)[5,10,20,50,100,200].forEach(function(n){btn('bpl','gn','+'+n,function(){add('b',n)})});
+  if(canB)[5,10,20,50].forEach(function(n){btn('bmi','rd','-'+n,function(){add('b',-n)})});
+  if(canA)[5,10,20,50].forEach(function(n){btn('apl','gn','+'+n,function(){add('a',n)})});
+  if(full||sc==='Score only')[5,10,20,50].forEach(function(n){btn('ami','rd','-'+n,function(){add('a',-n)})});
+  if(stl){ /* station leaders charge fixed prices from the Prices tab (after Sync now) */
+    db.collection('meta').doc('prices').get().then(function(d){
+      var items=(d.exists?d.data().items:[]).filter(function(x){return x.group===me.station&&x.amount>0});
+      if(!items.length){$('bmi').textContent='No prices for your station yet. Ask the owner to run Sync now.';return}
+      items.forEach(function(x){btn('bmi','rd',x.item+' -'+x.amount,function(){$('why').value=x.item;add('b',-x.amount)})})})}
+  sect('bpl',canB||scr||stl);sect('apl',canA);
+  $('cn').parentNode.style.display='none'; /* players now come from the sheet sync */
+  $('wc').parentNode.style.display=full?'':'none';
+}
 function signIn(){auth.signInWithEmailAndPassword($('em').value.trim(),$('pw').value).catch(function(e){say('Sign-in failed: '+e.code)})}
 function show(p){cur=p.code;$('who').textContent=p.code+' · '+p.nick+' · '+p.team;$('bb').textContent=p.barhams;$('aa').textContent=p.aura;$('pl').classList.remove('hidden');$('act').classList.remove('hidden')}
 function load(c){c=(c||'').trim().toUpperCase();if(!c)return;db.collection('players').doc(c).get().then(function(d){if(!d.exists){say('No player '+c);return}show(d.data())}).catch(function(e){say('Error: '+e.code)})}
 function add(kind,n){if(!cur){say('Open a player first');return}
   var ref=db.collection('players').doc(cur),tref=db.collection('meta').doc('teams'),why=$('why').value.trim().slice(0,40);
   db.runTransaction(function(tx){return tx.get(ref).then(function(d){var p=d.data();
-    var upd={},label=why||(kind==='b'?'Barhams':'Aura');
+    var upd={},label=why||(kind==='b'?(scrOnly&&n>0?'Scratch Card':'Barhams'):'Aura');
     if(kind==='b'){upd.barhams=Math.max(0,p.barhams+n)}else{upd.aura=Math.max(0,p.aura+n)}
     var applied=(kind==='b'?upd.barhams-p.barhams:upd.aura-p.aura);
-    var txl=(p.tx||[]);txl.unshift({t:label+(kind==='b'?'':' (Aura)'),d:applied,ts:Date.now()});upd.tx=txl.slice(0,20);
+    var txl=(p.tx||[]);txl.unshift({t:label+(kind==='b'?'':' (Aura)'),d:applied,ts:Date.now(),by:me.id||''});upd.tx=txl.slice(0,20);
     tx.update(ref,upd);
+    if(applied)tx.set(db.collection('log').doc(),{by:me.id||auth.currentUser.uid,code:cur,kind:kind==='b'?'barhams':'aura',d:applied,why:label,ts:Date.now()});
     if(kind==='a'&&applied){var inc={};inc[p.team]=firebase.firestore.FieldValue.increment(applied);tx.set(tref,inc,{merge:true})}
     return Object.assign({},p,upd)})}).then(function(p){show(p);say((n>0?'+':'')+n+(kind==='b'?' Barhams':' Aura')+' done',true)}).catch(function(e){say('Failed: '+(e.code||e.message))})}
 function seed(){var n=Math.min(450,+$('cn').value||0),b=+$('cb').value||0;if(!n)return;

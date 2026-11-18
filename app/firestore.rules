@@ -2,22 +2,69 @@ rules_version = '2';
 service cloud.firestore {
   match /databases/{database}/documents {
     function isStaff() { return request.auth != null && exists(/databases/$(database)/documents/staff/$(request.auth.uid)); }
+    function me() { return get(/databases/$(database)/documents/staff/$(request.auth.uid)).data; }
+    // A staff document without a scope (made by hand in the console before the sync) counts as Full.
+    function scope() { return me().get('scope', 'Full: Barhams and Score'); }
+    function role() { return me().get('role', ''); }
+    function isFull() { return isStaff() && scope() == 'Full: Barhams and Score'; }
 
-    // Players: anyone can read (leaderboard). Only staff can change points. Anyone can change ONLY the nickname (max 16 chars).
+    // Who may change Barhams
+    function canBarhams() {
+      return scope() in ['Full: Barhams and Score', 'Barhams only']
+        // station leaders (fixed prices) can only take Barhams away
+        || (scope() == 'Own station only' && role() == 'Station leader'
+            && request.resource.data.barhams < resource.data.barhams)
+        // Scratch Card givers can only add one of the printed prize amounts
+        || (me().get('canScratch', false) == true
+            && (request.resource.data.barhams - resource.data.barhams) in [5, 10, 20, 50, 100, 200]);
+    }
+    // Who may change Aura (the sheet's Score)
+    function canAura() {
+      return scope() in ['Full: Barhams and Score', 'Score only']
+        // game leaders can only add score
+        || (scope() == 'Own station only' && role() == 'Game Leader'
+            && request.resource.data.aura > resource.data.aura);
+    }
+    function statsOk() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['barhams', 'aura', 'tx'])
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['barhams']) || canBarhams())
+        && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['aura']) || canAura());
+    }
+
+    // Players (public, no names or phones): anyone can read (leaderboard).
+    // Anyone can change ONLY the nickname (max 16 chars). Staff change Barhams and Aura only as their scope allows.
+    // Players are created by the sheet sync (service account), not from the app.
     match /players/{code} {
       allow read: if true;
-      allow create, delete: if isStaff();
-      allow update: if isStaff()
-        || (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nick'])
-            && request.resource.data.nick is string && request.resource.data.nick.size() <= 16);
+      allow create, delete: if isFull();
+      allow update: if (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nick'])
+            && request.resource.data.nick is string && request.resource.data.nick.size() <= 16)
+        || (isStaff() && statsOk());
     }
+    // Names, phones, school, T-shirt, meal: staff read only, written only by the sheet sync
+    match /players_private/{code} {
+      allow read: if isStaff();
+      allow write: if false;
+    }
+    // Staff list from the sheet (roles, stations, scopes)
+    match /staffDirectory/{id} {
+      allow read: if isStaff();
+      allow write: if false;
+    }
+    // Prices and rules from the sheet are public; teams total is changed by score givers
     match /meta/{doc} {
       allow read: if true;
-      allow write: if isStaff();
+      allow write: if isStaff() && doc == 'teams' && (scope() in ['Full: Barhams and Score', 'Score only'] || role() == 'Game Leader');
+    }
+    // Every change by staff is logged (who, when, how much). Only Full staff read it.
+    match /log/{id} {
+      allow create: if isStaff() && request.resource.data.by == me().get('id', request.auth.uid);
+      allow read: if isFull();
+      allow update, delete: if false;
     }
     match /staff/{uid} {
       allow read: if request.auth != null && request.auth.uid == uid;
-      allow write: if false;   // add staff by hand in the Firebase console
+      allow write: if false;   // set by the sheet sync (Sync now), or by hand in the Firebase console
     }
   }
 }
