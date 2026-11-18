@@ -32,14 +32,12 @@ service cloud.firestore {
     }
 
     // Players (public, no names or phones): anyone can read (leaderboard).
-    // Anyone can change ONLY the nickname (max 16 chars). Staff change Barhams and Aura only as their scope allows.
+    // Nobody can edit a name from the app: the display name comes from the sheet (sync). Staff change Barhams and Aura only as their scope allows.
     // Players are created by the sheet sync (service account), not from the app.
     match /players/{code} {
       allow read: if true;
       allow create, delete: if isFull();
-      allow update: if (request.resource.data.diff(resource.data).affectedKeys().hasOnly(['nick'])
-            && request.resource.data.nick is string && request.resource.data.nick.size() <= 16)
-        || (isStaff() && statsOk());
+      allow update: if isStaff() && statsOk();
     }
     // Names, phones, school, T-shirt, meal: staff read only, written only by the sheet sync
     match /players_private/{code} {
