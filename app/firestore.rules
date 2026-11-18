@@ -20,10 +20,8 @@ service cloud.firestore {
     }
     // Who may change Aura (the sheet's Score)
     function canAura() {
-      return scope() in ['Full: Barhams and Score', 'Score only']
-        // game leaders can only add score
-        || (scope() == 'Own station only' && role() == 'Game Leader'
-            && request.resource.data.aura > resource.data.aura);
+      // Game leaders no longer change Aura directly: team points are given by the recordMatch function.
+      return scope() in ['Full: Barhams and Score', 'Score only'];
     }
     function statsOk() {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly(['barhams', 'aura', 'tx'])
@@ -52,7 +50,7 @@ service cloud.firestore {
     // Prices and rules from the sheet are public; teams total is changed by score givers
     match /meta/{doc} {
       allow read: if true;
-      allow write: if isStaff() && doc == 'teams' && (scope() in ['Full: Barhams and Score', 'Score only'] || role() == 'Game Leader');
+      allow write: if isStaff() && doc == 'teams' && scope() in ['Full: Barhams and Score', 'Score only'];
     }
     // Every change by staff is logged (who, when, how much). Only Full staff read it.
     match /log/{id} {
@@ -60,6 +58,10 @@ service cloud.firestore {
       allow read: if isFull();
       allow update, delete: if false;
     }
+    // Round schedule (pairings from the sheet), game results and closed rounds: staff read, only the server writes
+    match /schedule/{id} { allow read: if isStaff(); allow write: if false; }
+    match /matches/{id}  { allow read: if isStaff(); allow write: if false; }
+    match /rounds/{id}   { allow read: if isStaff(); allow write: if false; }
     match /staff/{uid} {
       allow read: if request.auth != null && request.auth.uid == uid;
       allow write: if false;   // set by the sheet sync (Sync now), or by hand in the Firebase console

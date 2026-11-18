@@ -1,0 +1,79 @@
+<!doctype html>
+<html lang="en"><head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>HoumaHype Round Dashboard</title><meta name="robots" content="noindex">
+<script src="firebase-config.js"></script>
+<style>
+:root{--bg:#081230;--panel:#0f1d46;--line:rgba(255,255,255,.16);--rd:#ff3b4e;--bl:#2f7bff;--yl:#ffd23f;--gn:#35d07f}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:#fff;font-family:system-ui,sans-serif;max-width:640px;margin:0 auto;padding:14px 14px 60px}
+h1{font-size:22px;margin:6px 0}.card{background:var(--panel);border:1px solid var(--line);border-radius:14px;padding:12px;margin:8px 0}
+button{padding:10px 12px;border-radius:10px;border:0;font-weight:800;font-size:14px;cursor:pointer;color:#fff;background:var(--bl)}
+button.gn{background:var(--gn);color:#042}button.rd{background:var(--rd)}button.gh{background:transparent;border:1px solid var(--line)}
+input{padding:10px;border-radius:10px;border:1px solid var(--line);background:rgba(255,255,255,.08);color:#fff;font-size:15px;width:110px}
+.mut{color:#9fb0d6;font-size:13px}.hidden{display:none}.row{display:flex;justify-content:space-between;gap:8px;align-items:center;flex-wrap:wrap}
+.miss{border-color:var(--rd);background:#2a1020}.miss .st{color:#ffb3bb}.done .st{color:#9ff0c2}.bar{height:10px;border-radius:6px;background:rgba(255,255,255,.12);overflow:hidden;margin:8px 0}
+.bar i{display:block;height:100%;background:var(--gn)}.tag{font-size:12px;font-weight:800;padding:3px 8px;border-radius:8px}.t-m{background:#7a1730}.t-w{background:#173f7a}
+#msg{position:sticky;top:0;padding:10px;border-radius:10px;margin:6px 0;font-weight:700;z-index:5}.ok{background:#0c3b25;color:#9ff0c2}.er{background:#4a1018;color:#ffb3bb}
+a{color:var(--yl)}
+</style></head><body>
+<div class="row"><h1>ROUND DASHBOARD</h1><a href="organizer.html">&larr; Organizer</a></div>
+<div id="msg" class="hidden"></div>
+<div id="nocfg" class="card hidden">Firebase is not connected yet.</div>
+<div id="login" class="card hidden">Staff only. <a href="organizer.html">Sign in on the organizer page</a>, then come back here.</div>
+<div id="main" class="hidden">
+  <div class="card"><div class="row"><button class="gh" onclick="go(-1)">&larr; Previous</button><div style="font-size:20px;font-weight:800" id="rt">Round 1</div><button class="gh" onclick="go(1)">Next &rarr;</button></div>
+    <div class="bar"><i id="bar" style="width:0"></i></div>
+    <div class="row"><div id="count" style="font-weight:800"></div><div class="mut" id="age"></div></div>
+    <div id="sum" class="mut" style="margin-top:6px"></div>
+  </div>
+  <div id="adm" class="card hidden"><div class="mut">Full staff: points used when you set a winner</div><input id="amt" type="number" inputmode="numeric" min="1" placeholder="points"></div>
+  <div id="list"></div>
+</div>
+<script>
+function $(i){return document.getElementById(i)}
+function esc(s){return String(s==null?'':s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
+function say(t,ok){var m=$('msg');m.textContent=t;m.className=ok?'ok':'er';clearTimeout(say.t);say.t=setTimeout(function(){m.className='hidden'},4000)}
+var MAXR=17,db,auth,fns,me={},full=false,rnd=1,started=false,unsub=[],sched=[],matches={},rounds={};
+if(!window.HH_FIREBASE){$('nocfg').classList.remove('hidden')}else{
+  var V='https://www.gstatic.com/firebasejs/10.14.1/',L=['firebase-app-compat.js','firebase-auth-compat.js','firebase-firestore-compat.js','firebase-functions-compat.js'],i=0;
+  (function next(){if(i>=L.length){init();return}var s=document.createElement('script');s.src=V+L[i++];s.onload=next;s.onerror=function(){say('Could not load Firebase. Check your internet.')};document.head.appendChild(s)})()}
+function init(){firebase.initializeApp(window.HH_FIREBASE);db=firebase.firestore();auth=firebase.auth();fns=firebase.app().functions('europe-west1');
+  auth.onAuthStateChanged(function(u){if(!u){$('login').classList.remove('hidden');$('main').classList.add('hidden');return}
+    db.collection('staff').doc(u.uid).get().then(function(d){if(!d.exists){$('login').classList.remove('hidden');return}
+      me=d.data();full=(me.scope||'Full: Barhams and Score')==='Full: Barhams and Score';
+      $('adm').classList.toggle('hidden',!full);$('login').classList.add('hidden');$('main').classList.remove('hidden');
+      db.collection('rounds').onSnapshot(function(q){rounds={};q.forEach(function(d){rounds[d.id]=d.data()});
+        if(!started){started=true;var mx=0;Object.keys(rounds).forEach(function(k){if(rounds[k].closed&&+k>mx)mx=+k});rnd=Math.min(MAXR,mx+1);listen()}else render()},function(e){say('Cannot read rounds: '+e.code)})
+    })})}
+function listen(){unsub.forEach(function(f){f()});unsub=[];sched=[];matches={};render();
+  unsub.push(db.collection('schedule').where('round','==',rnd).onSnapshot(function(q){sched=q.docs.map(function(d){return d.data()});render()},function(e){say('Cannot read schedule: '+e.code)}));
+  unsub.push(db.collection('matches').where('round','==',rnd).onSnapshot(function(q){matches={};q.forEach(function(d){matches[d.id]=d.data()});render()},function(e){say('Cannot read results: '+e.code)}))}
+function go(n){var r=rnd+n;if(r<1||r>MAXR)return;rnd=r;listen()}
+function slug(s){return String(s||'').toLowerCase().replace(/[^a-z0-9]+/g,'-').replace(/^-+|-+$/g,'')}
+function camp(k){return String(k).split('|')[0]}
+function render(){
+  $('rt').textContent='Round '+rnd;
+  var rows=sched.map(function(g){return{g:g,m:matches[g.round+'_'+slug(g.station)]||null}});
+  var done=rows.filter(function(r){return r.m}).length,n=rows.length;
+  $('count').textContent=n?(done+' of '+n+' games recorded'):'No schedule for this round yet';
+  $('bar').style.width=n?(100*done/n)+'%':'0';
+  var last=0;rows.forEach(function(r){if(r.m&&r.m.ts>last)last=r.m.ts});
+  $('age').textContent=last?('last result '+Math.max(0,Math.round((Date.now()-last)/60000))+' min ago'):'';
+  var rd=rounds[rnd],sum='';
+  if(rd&&rd.closed){var w=rd.wins||{},ks=Object.keys(w);sum='Round closed. '+ks.map(function(k){return esc(k)+' '+w[k]}).join(' - ')+(rd.tie?'. TIED: win points were swapped, no camp bonus.':'. '+esc(rd.winnerCamp)+' wins the round: bonus +'+rd.bonus+' for every '+esc(rd.winnerCamp)+' player.')}
+  else if(n&&done===n)sum='All games recorded, closing the round...';
+  else if(n)sum='Points for this round appear when every game is recorded. Missing games are listed first.';
+  $('sum').innerHTML=sum;
+  rows.sort(function(a,b){if(!a.m!==!b.m)return a.m?1:-1;return String(a.g.station).localeCompare(String(b.g.station),undefined,{numeric:true})});
+  $('list').innerHTML=rows.map(function(r){var g=r.g,m=r.m;
+    var tA='<span class="tag t-m">'+esc(camp(g.teamA))+'</span> '+esc(g.nameA),tB='<span class="tag t-w">'+esc(camp(g.teamB))+'</span> '+esc(g.nameB);
+    var st=!m?'NOT SCANNED YET':(m.result==='draw'?'No result':esc(m.winnerName)+' ('+esc(camp(m.winner))+') won'+(m.amount?' · '+m.amount+' pts':''));
+    var btn='';
+    if(full)btn='<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap"><button class="gn" onclick="setW(\''+esc(g.station).replace(/'/g,"\\'")+'\',\'A\')">'+esc(camp(g.teamA))+' wins</button><button class="gn" onclick="setW(\''+esc(g.station).replace(/'/g,"\\'")+'\',\'B\')">'+esc(camp(g.teamB))+' wins</button><button class="gh" onclick="noRes(\''+esc(g.station).replace(/'/g,"\\'")+'\')">No result</button></div>';
+    return'<div class="card '+(m?'done':'miss')+'"><div class="row"><b>'+esc(g.station)+'</b><span class="st" style="font-weight:800">'+st+'</span></div><div class="mut" style="margin-top:4px">'+tA+' &nbsp;vs&nbsp; '+tB+'</div>'+btn+'</div>'}).join('')}
+function call(action,station,extra){return fns.httpsCallable('adminMatch')(Object.assign({action:action,round:rnd,station:station},extra||{})).then(function(){say('Saved. Points were recomputed.',true)}).catch(function(e){say(e.message||'Failed')})}
+function setW(st,w){var a=Math.round(+$('amt').value);if(!a||a<1){say('Type the points first');return}
+  if(confirm('Set the winner of '+st+' (round '+rnd+') and recompute all points affected?'))call('set',st,{winner:w,amount:a})}
+function noRes(st){if(confirm('Mark '+st+' (round '+rnd+') as NO RESULT? Nobody gets points for it.'))call('noresult',st)}
+setInterval(function(){if(started)render()},30000);
+</script></body></html>

@@ -10,13 +10,32 @@
       "sheet-sync/**",
       "app/SETUP.md",
       "app/firestore.rules",
-      ".github/**"
+      ".github/**",
+      "functions/**",
+      "tests/**"
     ],
     "headers": [
       {
         "source": "**/*.@(html|js|json)",
-        "headers": [{ "key": "Cache-Control", "value": "no-cache" }]
+        "headers": [
+          {
+            "key": "Cache-Control",
+            "value": "no-cache"
+          }
+        ]
       }
     ]
+  },
+  "functions": {
+    "source": "functions",
+    "runtime": "nodejs22",
+    "ignore": [
+      "node_modules",
+      ".git",
+      "test"
+    ]
+  },
+  "firestore": {
+    "rules": "app/firestore.rules"
   }
 }

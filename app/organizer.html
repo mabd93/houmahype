@@ -27,6 +27,7 @@ button.rd{background:var(--rd)}button.gn{background:var(--gn);color:#042}button.
 </div>
 
 <div id="main" class="hidden">
+  <a href="rounds.html" style="display:block;text-align:center;text-decoration:none"><button class="gh" style="width:100%">Round dashboard: which stations are still missing</button></a>
   <h2>1. FIND PLAYER</h2>
   <div class="card">
     <input id="code" placeholder="Wristband code, e.g. M001" autocapitalize="characters">
@@ -40,6 +41,13 @@ button.rd{background:var(--rd)}button.gn{background:var(--gn);color:#042}button.
   </div>
 
   <div id="act" class="hidden">
+    <div id="tw"><h2>2. TEAM WIN</h2><div class="card">
+      <div class="mut">Scan or open ANY player of the winning team. The whole team gets the points once. Scanning the same team again, or the other team, adds nothing.</div>
+      <div id="twinfo" style="margin:6px 0;font-weight:700"></div>
+      <input id="twst" placeholder="Station (as in the Staff sheet), e.g. Station 4" class="hidden">
+      <input id="twamt" type="number" inputmode="numeric" min="1" placeholder="Points for the winning team">
+      <button class="gn" style="width:100%" id="twbtn" onclick="teamWin()">Give the whole team the win</button>
+    </div></div>
     <h2>2. BARHAMS</h2><div class="card"><div class="grid" id="bpl"></div><div class="grid" id="bmi" style="margin-top:8px"></div>
       <div id="bcust" class="hidden" style="margin-top:10px"><div class="mut">Custom amount</div><input id="bcv" type="number" inputmode="numeric" min="1" placeholder="e.g. 35"><div class="two"><button class="gn" onclick="custom('b',1)">Add</button><button class="rd" onclick="custom('b',-1)">Deduct</button></div></div></div>
     <h2>3. AURA POINTS</h2><div class="card"><div class="grid" id="apl"></div><div class="grid" id="ami" style="margin-top:8px"></div>
@@ -61,11 +69,11 @@ button.rd{background:var(--rd)}button.gn{background:var(--gn);color:#042}button.
 <script>
 function $(i){return document.getElementById(i)}
 function say(t,ok){var m=$('msg');m.textContent=t;m.className=ok?'ok':'er';clearTimeout(say.t);say.t=setTimeout(function(){m.className='hidden'},3500)}
-var cur=null,db,auth,me={},scrOnly=false,curPriv=null;
+var cur=null,curP=null,db,auth,fns,me={},scrOnly=false,curPriv=null,isGL=false;
 if(!window.HH_FIREBASE){$('nocfg').classList.remove('hidden')}else{
-  var V='https://www.gstatic.com/firebasejs/10.14.1/',L=['firebase-app-compat.js','firebase-auth-compat.js','firebase-firestore-compat.js'],i=0;
+  var V='https://www.gstatic.com/firebasejs/10.14.1/',L=['firebase-app-compat.js','firebase-auth-compat.js','firebase-firestore-compat.js','firebase-functions-compat.js'],i=0;
   (function next(){if(i>=L.length){init();return}var s=document.createElement('script');s.src=V+L[i++];s.onload=next;s.onerror=function(){say('Could not load Firebase. Check your internet.')};document.head.appendChild(s)})()}
-function init(){firebase.initializeApp(window.HH_FIREBASE);db=firebase.firestore();auth=firebase.auth();
+function init(){firebase.initializeApp(window.HH_FIREBASE);db=firebase.firestore();auth=firebase.auth();fns=firebase.app().functions('europe-west1');
   auth.onAuthStateChanged(function(u){if(!u){$('login').classList.remove('hidden');$('main').classList.add('hidden');return}
     db.collection('staff').doc(u.uid).get().then(function(d){if(!d.exists){say('This account is not staff. Ask the admin to add you.');auth.signOut();return}
       me=d.data();applyRole();
@@ -76,7 +84,8 @@ function init(){firebase.initializeApp(window.HH_FIREBASE);db=firebase.firestore
 function applyRole(){
   var sc=me.scope||'Full: Barhams and Score',ro=me.role||'',full=sc==='Full: Barhams and Score';
   var canB=full||sc==='Barhams only',stl=sc==='Own station only'&&ro==='Station leader',scr=me.canScratch===true;
-  var gl=sc==='Own station only'&&ro==='Game Leader',canA=full||sc==='Score only'||gl;
+  var gl=sc==='Own station only'&&ro==='Game Leader',canA=full||sc==='Score only';isGL=gl;
+  var canTW=full||sc==='Score only'||gl;$('tw').style.display=canTW?'':'none';$('twst').classList.toggle('hidden',gl);
   scrOnly=!canB&&scr;
   ['bpl','bmi','apl','ami'].forEach(function(i){$(i).innerHTML=''});
   function btn(box,cls,txt,fn){var b=document.createElement('button');b.className=cls;b.textContent=txt;b.onclick=fn;$(box).appendChild(b)}
@@ -99,7 +108,7 @@ function applyRole(){
 function custom(kind,sign){var n=Math.round(+$(kind==='b'?'bcv':'acv').value);if(!n||n<1||n>100000){say('Type a whole number from 1 to 100000');return}
   $(kind==='b'?'bcv':'acv').value='';add(kind,sign*n)}
 function signIn(){auth.signInWithEmailAndPassword($('em').value.trim(),$('pw').value).catch(function(e){say('Sign-in failed: '+e.code)})}
-function show(p){cur=p.code;$('pname').textContent=(curPriv&&curPriv.name)||p.nick;$('who').textContent=[p.code,p.teamName||p.team,p.camp,p.color,'Nickname: '+p.nick].filter(Boolean).join(' · ');$('bb').textContent=p.barhams;$('aa').textContent=p.aura;$('pl').classList.remove('hidden');$('act').classList.remove('hidden')}
+function show(p){cur=p.code;curP=p;$('twinfo').textContent=(p.teamName?p.teamName+' ('+(p.camp||p.team)+')':'')+(isGL&&me.station?' · '+me.station:'');$('pname').textContent=(curPriv&&curPriv.name)||p.nick;$('who').textContent=[p.code,p.teamName||p.team,p.camp,p.color].filter(Boolean).join(' · ');$('bb').textContent=p.barhams;$('aa').textContent=p.aura;$('pl').classList.remove('hidden');$('act').classList.remove('hidden')}
 function load(c){c=(c||'').trim().toUpperCase();if(!c)return;Promise.all([db.collection('players').doc(c).get(),db.collection('players_private').doc(c).get().catch(function(){return null})]).then(function(r){var d=r[0];if(!d.exists){say('No player '+c);return}curPriv=r[1]&&r[1].exists?r[1].data():null;show(d.data())}).catch(function(e){say('Error: '+e.code)})}
 function add(kind,n){if(!cur){say('Open a player first');return}
   var ref=db.collection('players').doc(cur),tref=db.collection('meta').doc('teams'),why=$('why').value.trim().slice(0,40);
@@ -112,6 +121,14 @@ function add(kind,n){if(!cur){say('Open a player first');return}
     if(applied)tx.set(db.collection('log').doc(),{by:me.id||auth.currentUser.uid,code:cur,kind:kind==='b'?'barhams':'aura',d:applied,why:label,ts:Date.now()});
     if(kind==='a'&&applied){var inc={};inc[p.team]=firebase.firestore.FieldValue.increment(applied);tx.set(tref,inc,{merge:true})}
     return Object.assign({},p,upd)})}).then(function(p){show(p);say((n>0?'+':'')+n+(kind==='b'?' Barhams':' Aura')+' done',true)}).catch(function(e){say('Failed: '+(e.code||e.message))})}
+function teamWin(){if(!cur){say('Open a player first');return}
+  var amt=Math.round(+$('twamt').value);if(!amt||amt<1){say('Type the points for the winning team');return}
+  var d={code:cur,amount:amt};if(!isGL){var st=$('twst').value.trim();if(!st){say('Type the station');return}d.station=st}
+  $('twbtn').disabled=true;
+  fns.httpsCallable('recordMatch')(d).then(function(r){var x=r.data;
+    if(x.status==='already')say('Already scored: '+x.winner+' won this game. Nothing was added.');
+    else say('Recorded: '+x.winner+' wins '+x.amount+' points (round '+x.round+', '+x.station+').'+(x.round_state&&x.round_state.closed?' Round complete.':''),true);
+  }).catch(function(e){say(e.message||'Failed')}).then(function(){$('twbtn').disabled=false})}
 function scan(){if(!('NDEFReader' in window)){say('iPhone: just tap the band on the top of the phone and open the notification. Or type the code.');return}
   var r=new NDEFReader();r.scan().then(function(){say('Hold a wristband to the phone',true);r.onreading=function(e){var rec=e.message.records[0];if(!rec)return;var t=new TextDecoder().decode(rec.data),m=t.match(/[?&]w=([A-Za-z0-9-]+)/);var c=m?m[1]:t.trim();$('code').value=c.toUpperCase();load(c)}}).catch(function(e){say('NFC error: '+e.name)})}
 function writeTag(){var c=$('wc').value.trim().toUpperCase();if(!c)return;if(!('NDEFReader' in window)){say('Writing from the browser needs Android Chrome. On iPhone use the NFC Tools app and write this link: https://houmahype.com/app/?w='+c);return}

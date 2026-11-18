@@ -1,0 +1,12 @@
+{
+  "name": "houmahype-functions",
+  "private": true,
+  "description": "Team scoring for the HoumaHype event (once-only game points, camp round bonus, corrections)",
+  "main": "index.js",
+  "engines": { "node": "22" },
+  "scripts": { "test": "node --test test/*.test.js" },
+  "dependencies": {
+    "firebase-admin": "^13.0.0",
+    "firebase-functions": "^6.3.0"
+  }
+}

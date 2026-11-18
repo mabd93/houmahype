@@ -27,6 +27,7 @@ function onOpen() {
     .addItem('Safe sync (players)', 'safeSync')
     .addItem('Sync now (everything)', 'syncNow')
     .addSeparator()
+    .addItem('Create Matches tab (pairings)', 'createMatchesTab')
     .addItem('Install 5-minute trigger', 'installTrigger')
     .addItem('Remove 5-minute trigger', 'removeTrigger')
     .addToUi();
@@ -57,9 +58,10 @@ function syncNow() {
   var p = syncPlayers_(false);
   var st = syncStaff_();
   var pr = syncPrices_();
+  var mt = syncMatches_();
   var msg = 'Sync now. Players: ' + p.create + ' created, ' + p.update + ' updated, ' + p.same + ' unchanged. Staff directory: ' + st.dir +
     ', logins linked: ' + st.linked + ', logins removed: ' + st.removed + (st.noAccount.length ? ', no account yet for: ' + st.noAccount.join(', ') : '') +
-    '. Prices: ' + pr.items + ' items, ' + pr.rules + ' rules.';
+    '. Prices: ' + pr.items + ' items, ' + pr.rules + ' rules. ' + mt.text;
   log_(msg);
   toast_(msg);
 }
@@ -131,6 +133,60 @@ function readPrices_() {
     });
   }
   return { items: items, rules: rules };
+}
+
+/* ---------- round schedule (pairings) ----------
+ * Tab "Matches": A Round, B Station, C MaZoo team name, D WiSoo team name, E Points (optional, fixed points for a game at that station).
+ * Station must be written exactly like the Station column in the Staff tab. Team names must match the TeamName column of the Players tab.
+ */
+var CAMP_A = 'MaZoo', CAMP_B = 'WiSoo';
+
+function slug_(s) { return String(s || '').toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, ''); }
+
+function createMatchesTab() {
+  var ss = SpreadsheetApp.getActive();
+  var s = ss.getSheetByName('Matches') || ss.insertSheet('Matches');
+  s.getRange('A1:E1').setValues([['Round', 'Station', 'MaZoo team', 'WiSoo team', 'Points (optional)']]).setFontWeight('bold');
+  s.setFrozenRows(1);
+  toast_('Matches tab ready. One row per game: round number, station, the MaZoo team name and the WiSoo team name.');
+}
+
+function readMatches_() {
+  var s = SpreadsheetApp.getActive().getSheetByName('Matches');
+  if (!s || s.getLastRow() < 2) return null;
+  var rows = [], fixed = {}, errors = [];
+  s.getRange(2, 1, s.getLastRow() - 1, 5).getValues().forEach(function (r, i) {
+    var round = Number(r[0]), station = String(r[1]).trim(), a = String(r[2]).trim(), b = String(r[3]).trim();
+    if (r[0] === '' && !station && !a && !b) return;
+    if (!round || !station || !a || !b) { errors.push('row ' + (i + 2)); return; }
+    rows.push({ round: round, station: station, a: a, b: b });
+    if (r[4] !== '' && Number(r[4]) > 0) fixed[slug_(station)] = Math.round(Number(r[4]));
+  });
+  return { rows: rows, fixed: fixed, errors: errors };
+}
+
+function syncMatches_() {
+  var m = readMatches_();
+  if (!m) return { count: 0, text: 'Matches tab: empty or missing (use "Create Matches tab").' };
+  // Check the names against the Players tab so a typo cannot silently break scoring.
+  var size = {};
+  readPlayers_().forEach(function (p) { var k = p.camp + '|' + p.teamName; size[k] = (size[k] || 0) + 1; });
+  var problems = m.errors.map(function (e) { return 'incomplete ' + e; });
+  var writes = [], seen = {};
+  m.rows.forEach(function (r) {
+    var a = CAMP_A + '|' + r.a, b = CAMP_B + '|' + r.b;
+    if (!size[a]) problems.push('no players for ' + a);
+    if (!size[b]) problems.push('no players for ' + b);
+    var id = r.round + '_' + slug_(r.station);
+    if (seen[id]) problems.push('duplicate ' + r.station + ' in round ' + r.round);
+    seen[id] = true;
+    writes.push({ update: { name: DOCS + '/schedule/' + id, fields: fields_({ round: r.round, station: r.station, teamA: a, teamB: b, teams: [a, b], nameA: r.a, nameB: r.b }) } });
+  });
+  if (Object.keys(m.fixed).length) writes.push({ update: { name: DOCS + '/meta/gamepoints', fields: fields_({ fixed: m.fixed, max: 1000 }) } });
+  for (var i = 0; i < writes.length; i += 400) commit_(writes.slice(i, i + 400));
+  var rounds = {}; m.rows.forEach(function (r) { rounds[r.round] = (rounds[r.round] || 0) + 1; });
+  return { count: m.rows.length, text: 'Matches: ' + m.rows.length + ' games in ' + Object.keys(rounds).length + ' rounds' +
+    (problems.length ? '. CHECK: ' + problems.slice(0, 8).join('; ') + (problems.length > 8 ? '; ...' : '') : '') + '.' };
 }
 
 /* ---------- players ---------- */

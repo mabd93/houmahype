@@ -1,0 +1,34 @@
+name: Deploy functions and Firestore rules
+
+# Runs only when the server code or the rules change. The website itself is deployed by deploy-live.yml.
+on:
+  push:
+    branches: [main]
+    paths:
+      - "functions/**"
+      - "app/firestore.rules"
+      - ".github/workflows/deploy-functions.yml"
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Test scoring rules
+        working-directory: functions
+        run: npm test
+      - name: Install function dependencies
+        working-directory: functions
+        run: npm install --no-audit --no-fund
+      - name: Write service account key
+        env:
+          SA_JSON: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: printf '%s' "$SA_JSON" > "$RUNNER_TEMP/sa.json"
+      - name: Deploy functions and rules
+        env:
+          GOOGLE_APPLICATION_CREDENTIALS: ${{ runner.temp }}/sa.json
+        run: npx --yes firebase-tools@latest deploy --only functions,firestore:rules --project houmahype-bb4f9 --non-interactive --force
