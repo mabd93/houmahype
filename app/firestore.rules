@@ -59,7 +59,7 @@ service cloud.firestore {
       allow update, delete: if false;
     }
     // Round schedule (pairings from the sheet), game results and closed rounds: staff read, only the server writes
-    match /schedule/{id} { allow read: if isStaff(); allow write: if false; }
+    match /schedule/{id} { allow read: if true; allow write: if false; }
     match /matches/{id}  { allow read: if isStaff(); allow write: if false; }
     match /rounds/{id}   { allow read: if isStaff(); allow write: if false; }
     match /staff/{uid} {

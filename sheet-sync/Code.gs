@@ -59,9 +59,10 @@ function syncNow() {
   var st = syncStaff_();
   var pr = syncPrices_();
   var mt = syncMatches_();
+  var ec = syncEvent_();
   var msg = 'Sync now. Players: ' + p.create + ' created, ' + p.update + ' updated, ' + p.same + ' unchanged. Staff directory: ' + st.dir +
     ', logins linked: ' + st.linked + ', logins removed: ' + st.removed + (st.noAccount.length ? ', no account yet for: ' + st.noAccount.join(', ') : '') +
-    '. Prices: ' + pr.items + ' items, ' + pr.rules + ' rules. ' + mt.text;
+    '. Prices: ' + pr.items + ' items, ' + pr.rules + ' rules. ' + mt.text + ' ' + ec;
   log_(msg);
   toast_(msg);
 }
@@ -133,6 +134,24 @@ function readPrices_() {
     });
   }
   return { items: items, rules: rules };
+}
+
+/* ---------- event clock (for the student "My Games" tab) ----------
+ * Reads the Rotation tab: B1 start time (e.g. 09:00), B2 play minutes, B3 switch minutes. The event date is set here (Cairo time, UTC+2 in December).
+ */
+var EVENT_DATE = '2026-12-04', EVENT_OFFSET = '+02:00';
+
+function syncEvent_() {
+  var s = SpreadsheetApp.getActive().getSheetByName('Rotation');
+  if (!s) return 'Event clock: Rotation tab missing.';
+  var v = s.getRange('B1:B3').getDisplayValues();
+  var t = String(v[0][0]).trim(), m = /^(\d{1,2}):(\d{2})/.exec(t);
+  var play = Number(v[1][0]), chg = Number(v[2][0]);
+  if (!m || !play || !chg) return 'Event clock: CHECK Rotation B1:B3 (start time, play minutes, switch minutes).';
+  var hh = ('0' + m[1]).slice(-2);
+  var start = EVENT_DATE + 'T' + hh + ':' + m[2] + ':00' + EVENT_OFFSET;
+  commit_([{ update: { name: DOCS + '/meta/event', fields: fields_({ start: start, play: play, change: chg }) } }]);
+  return 'Event clock: ' + start + ', ' + play + ' min play + ' + chg + ' min switch.';
 }
 
 /* ---------- round schedule (pairings) ----------

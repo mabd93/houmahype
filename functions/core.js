@@ -195,9 +195,16 @@ async function settleRound(db, round, reason) {
     const names = {};
     players.docs.forEach(d => { const p = d.data(); if (p.camp && p.teamName) names[S.teamKey(p.camp, p.teamName)] = true; });
     Object.keys(totals).forEach(k => { names[k] = true; });
-    const board = Object.keys(names).map(k => ({ k: k, c: S.campOf(k), n: k.slice(k.indexOf('|') + 1), p: totals[k] || 0 }))
-      .sort((x, y) => y.p - x.p || x.n.localeCompare(y.n));
-    tx.set(db.collection('meta').doc('leaderboard'), { teams: board, updatedAt: now });
+    // Round by round history for each team (game points, camp bonus, station) and a one-line summary per round.
+    const closedList = closedAll.docs.map(d => d.data()).filter(r => r.round !== round)
+      .concat([{ round: round, rosters: rosters, detail: res.detail, wins: res.wins, tie: res.tie, bonus: res.bonus, bonusCamp: res.tie ? null : res.winnerCamp }])
+      .sort((x, y) => x.round - y.round);
+    const board = Object.keys(names).map(k => {
+      const h = closedList.map(r => { const code = ((r.rosters || {})[k] || [])[0]; const det = (code && r.detail && r.detail[code]) || {}; return { r: r.round, g: det.game || 0, b: det.bonus || 0, s: det.station || '' }; });
+      return { k: k, c: S.campOf(k), n: k.slice(k.indexOf('|') + 1), p: totals[k] || 0, h: h };
+    }).sort((x, y) => y.p - x.p || x.n.localeCompare(y.n));
+    const rs = closedList.map(r => ({ r: r.round, w: r.bonusCamp || null, tie: !!r.tie, bonus: r.bonus || 0, wins: r.wins || {} }));
+    tx.set(db.collection('meta').doc('leaderboard'), { teams: board, rounds: rs, updatedAt: now });
 
     tx.set(rRef, {
       round: round, closed: true, closedAt: (old && old.closedAt) || now, updatedAt: now, version: ((old && old.version) || 0) + 1,

@@ -137,3 +137,15 @@ test('public leaderboard lists every team with its total, including teams on a b
   assert.equal(pts[S.teamKey('WiSoo', 'T1')], 0);
   assert.equal(lb.teams[0].p, 40);                                     // sorted best first
 });
+
+test('leaderboard keeps a round-by-round history per team and a summary per round', async () => {
+  const db = setup(2);
+  for (const r of [1, 2]) { await win(db, 1, 'M1001', 20, r); await win(db, 2, 'M2001', 30, r); await win(db, 3, 'W3001', 40, r); }
+  const lb = db.get('meta/leaderboard');
+  const t1 = lb.teams.find(x => x.k === S.teamKey('MaZoo', 'T1'));
+  assert.deepEqual(t1.h.map(x => x.r), [1, 2]);
+  assert.equal(t1.h[0].g, 20); assert.equal(t1.h[0].b, 1); assert.equal(t1.h[1].b, 2); assert.equal(t1.h[0].s, 'Station 1');
+  const t4 = lb.teams.find(x => x.k === S.teamKey('MaZoo', 'T4'));
+  assert.equal(t4.h[0].g, 0); assert.equal(t4.h[0].b, 1);            // resting team: no game, still the camp bonus
+  assert.equal(lb.rounds.length, 2); assert.equal(lb.rounds[1].w, 'MaZoo'); assert.equal(lb.rounds[1].bonus, 2);
+});

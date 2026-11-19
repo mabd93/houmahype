@@ -30,6 +30,8 @@ h2{font-size:22px;margin:18px 2px 6px}
 .row{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line)}.row:first-child{border-top:0}
 .row .n{width:26px;text-align:center;font-family:Anton;color:var(--mut)}
 .row .nm{flex:1;font-weight:600}.row .v{font-family:Anton;font-size:18px;color:var(--yl)}
+.pl{padding:12px 14px;border-radius:14px;margin:6px 0;background:rgba(255,255,255,.06);border:1px solid var(--line)}.pl.now{border:2px solid var(--yl);background:rgba(255,210,63,.12)}.pl.brk{opacity:.8}.pl .t{font-size:12px;color:var(--mut);font-weight:800;letter-spacing:.06em}.pl .s{font-size:18px;font-weight:800}.pl .o{font-size:13px}.pl .g{float:right;font-family:Anton;font-size:18px;color:var(--yl)}
+.go{text-align:center;padding:18px 14px;border-radius:18px;margin:8px 0;border:2px solid #fff}.go.play{background:linear-gradient(135deg,#1c8f58,#0e5a38)}.go.move{background:linear-gradient(135deg,#d97a00,#a14d00)}.go.wait{background:linear-gradient(135deg,#34406b,#1c2650)}.go .k{font-size:12px;letter-spacing:.12em;font-weight:800;opacity:.9}.go .b{font-family:Anton;font-size:30px;margin:4px 0}.go .d{font-size:14px}
 .lb{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;margin:6px 0;border:2px solid transparent}.lb.m{background:linear-gradient(90deg,#c4162a,#8d0f1e)}.lb.w{background:linear-gradient(90deg,#1f5fe0,#12378f)}.lb.me{border-color:var(--yl)}
 .lb .r{width:40px;text-align:center;font-family:Anton;font-size:20px}.lb .nm{flex:1;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lb .v{font-family:Anton;font-size:22px}.lb .c{font-size:11px;opacity:.85;letter-spacing:.08em;font-weight:800}
 .medal{display:inline-block;width:34px;height:34px;line-height:34px;border-radius:50%;font-family:Anton;font-size:18px;color:#222;box-shadow:inset 0 -3px 0 rgba(0,0,0,.25)}.medal.g{background:linear-gradient(135deg,#fff3a0,#f2b800)}.medal.s{background:linear-gradient(135deg,#fff,#aeb7c4)}.medal.b{background:linear-gradient(135deg,#f6c08f,#b9692b)}
@@ -42,7 +44,7 @@ h2{font-size:22px;margin:18px 2px 6px}
 .btn{display:block;width:100%;text-align:center;padding:14px;border-radius:14px;border:0;background:var(--rd);color:#fff;font-weight:800;font-size:15px;text-decoration:none;box-shadow:4px 4px 0 var(--bl);cursor:pointer}
 .btn.alt{background:transparent;border:2px solid var(--line);box-shadow:none;color:var(--ink)}
 input{width:100%;padding:14px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.08);color:#fff;font-size:16px;margin:8px 0}
-.tabs{position:fixed;left:0;right:0;bottom:0;max-width:520px;margin:0 auto;display:grid;grid-template-columns:repeat(4,1fr);background:rgba(8,18,48,.96);backdrop-filter:blur(10px);border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom))}
+.tabs{position:fixed;left:0;right:0;bottom:0;max-width:520px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);background:rgba(8,18,48,.96);backdrop-filter:blur(10px);border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom))}
 .tabs button{background:none;border:0;color:var(--mut);padding:8px 2px;display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;font-weight:600;cursor:pointer}
 .tabs button span{font-size:22px}.tabs button.on{color:var(--yl)}
 .flash{animation:fl .9s}@keyframes fl{0%{background:rgba(255,210,63,.5)}100%{background:transparent}}
@@ -57,10 +59,9 @@ input{width:100%;padding:14px;border-radius:12px;border:1px solid var(--line);ba
   <div class="logo" style="font-size:30px">HOUMA<i>HYPE</i></div>
   <h1>TAP IN.</h1>
   <p class="mut">Tap your wristband on the back of your phone, or type the code printed on it.</p>
-  <input id="code" placeholder="Wristband code, e.g. HH-007" autocapitalize="characters" autocomplete="off">
+  <input id="code" placeholder="Wristband code, e.g. M001" autocapitalize="characters" autocomplete="off">
   <button class="btn" onclick="doLogin(document.getElementById('code').value)">Enter the arena</button>
   <p id="lerr" class="neg" style="min-height:20px"></p>
-  <button class="btn alt" onclick="doLogin('HH-007')">Try the demo</button>
 </div>
 
 <div id="app" class="hidden">
@@ -69,6 +70,7 @@ input{width:100%;padding:14px;border-radius:12px;border:1px solid var(--line);ba
   <main id="view"></main>
   <nav class="tabs">
     <button data-t="barhams"><span>&#129689;</span>Barhams</button>
+    <button data-t="plan"><span>&#128197;</span>My Games</button>
     <button data-t="aura"><span>&#9889;</span>Aura Score</button>
     <button data-t="events"><span>&#127942;</span>Events</button>
     <button data-t="profile"><span>&#128100;</span>Profile</button>
@@ -98,6 +100,7 @@ var DemoDB=(function(){
     get:function(c){c=(c||'').trim().toUpperCase();return Promise.resolve(P[c]||null)},
     top:function(n){return codes.map(function(c){return P[c]}).sort(function(a,b){return b.aura-a.aura}).slice(0,n)},
     teams:function(){var r={MaZoo:0,WiSoo:0};codes.forEach(function(c){r[P[c].team]+=P[c].aura});return r},
+    rounds:function(){return []},event:function(){return null},sched:function(){return Promise.resolve([])},
     board:function(){var m={};codes.forEach(function(c){var q=P[c],k=q.team+'|'+(q.teamName||q.team);m[k]=m[k]||{k:k,c:q.team,n:q.teamName||q.team,p:0};m[k].p=Math.max(m[k].p,q.aura)});return Object.keys(m).map(function(k){return m[k]})},
     rank:function(c){var s=codes.map(function(x){return P[x]}).sort(function(a,b){return b.aura-a.aura});var i=s.findIndex(function(p){return p.code===c});return i<0?null:i+1},
     on:function(f){subs.push(f)},
@@ -105,19 +108,21 @@ var DemoDB=(function(){
 })();
 
 var FbDB=function(cfg){
-  var db,P={},top=[],board=[],teams={MaZoo:0,WiSoo:0},subs=[],mine=null,ready;
+  var db,P={},top=[],board=[],rounds=[],ev=null,teams={MaZoo:0,WiSoo:0},subs=[],mine=null,ready;
   firebase.initializeApp(cfg);db=firebase.firestore();
   function ping(c){subs.forEach(function(f){f(c)})}
   var o={demo:false,
     get:function(c){c=(c||'').trim().toUpperCase();if(!/^[A-Z0-9-]{3,12}$/.test(c))return Promise.resolve(null);
       return db.collection('players').doc(c).get().then(function(d){if(!d.exists)return null;P[c]=d.data();
         if(mine!==c){mine=c;db.collection('players').doc(c).onSnapshot(function(s){if(s.exists){P[c]=s.data();ping(c)}})}return P[c]})},
-    top:function(n){return top.slice(0,n)},teams:function(){return teams},board:function(){return board},
+    top:function(n){return top.slice(0,n)},teams:function(){return teams},board:function(){return board},rounds:function(){return rounds},event:function(){return ev},
+    sched:function(k){return db.collection('schedule').where('teams','array-contains',k).get().then(function(q){return q.docs.map(function(d){return d.data()})})},
     rank:function(c){var i=top.findIndex(function(p){return p.code===c});return i<0?null:i+1},
     on:function(f){subs.push(f)},
     };
   db.collection('players').orderBy('aura','desc').limit(10).onSnapshot(function(q){top=q.docs.map(function(d){return d.data()});ping()});
-  db.collection('meta').doc('leaderboard').onSnapshot(function(d){if(d.exists){board=d.data().teams||[];ping()}});
+  db.collection('meta').doc('leaderboard').onSnapshot(function(d){if(d.exists){board=d.data().teams||[];rounds=d.data().rounds||[];ping()}});
+  db.collection('meta').doc('event').onSnapshot(function(d){if(d.exists){ev=d.data();ping()}});
   db.collection('meta').doc('teams').onSnapshot(function(d){if(d.exists){teams={MaZoo:d.data().MaZoo||0,WiSoo:d.data().WiSoo||0};ping()}});
   return o};
 var DB=DemoDB;
@@ -142,7 +147,36 @@ function showLogin(){$('app').classList.add('hidden');$('login').classList.remov
 function logout(){store('hh_code',null);me=null;showLogin()}
 
 
+
+var SCH=null,PLANKEY=null;
+function loadPlan(){if(!me||!me.teamName)return;var k=me.team+'|'+me.teamName;if(PLANKEY===k&&SCH)return;PLANKEY=k;DB.sched(k).then(function(r){SCH=r;if(tab==='plan')render()}).catch(function(){})}
+function hm(ms){try{return new Date(ms).toLocaleTimeString('en-GB',{timeZone:'Africa/Cairo',hour:'2-digit',minute:'2-digit'})}catch(e){return ''}}
+function planHtml(){
+  if(!me.teamName)return'<div class="card mut">Your team is not set yet. Ask an organizer.</div>';
+  if(!SCH)return'<div class="card mut">Loading your games...</div>';
+  var EV=DB.event(),N=17,byR={};SCH.forEach(function(g){byR[g.round]=g});
+  if(!SCH.length||!EV)return'<div class="card mut">Your game schedule will appear here before the event starts.</div>';
+  var play=EV.play||15,chg=EV.change||5,slot=play+chg,st=Date.parse(EV.start),now=Date.now();
+  var board=DB.board(),k=me.team+'|'+me.teamName,mine=board.filter(function(t){return t.k===k})[0],hist={};
+  ((mine&&mine.h)||[]).forEach(function(x){hist[x.r]=x});
+  function who(r){var g=byR[r];if(!g)return null;var mineA=g.teamA===k;return{st:g.station,opp:mineA?g.nameB:g.nameA,oc:mineA?'WiSoo':'MaZoo'}}
+  function line(r){var w=who(r);return w?'Station <b>'+esc(w.st)+'</b> vs '+esc(w.opp):'<b>BREAK</b> &middot; optional games (boxing, hammer, claw)'}
+  var mins=(now-st)/60000,idx=Math.floor(mins/slot),r=idx+1,into=mins-idx*slot,h='';
+  if(mins<0){h+='<div class="go wait"><div class="k">EVENT STARTS AT '+hm(st)+'</div><div class="b">GET READY</div><div class="d">Round 1 &middot; '+line(1)+'</div></div>'}
+  else if(r>N){h+='<div class="go wait"><div class="k">GAMES FINISHED</div><div class="b">WELL PLAYED</div><div class="d">Check the Aura Score tab for the final ranking.</div></div>'}
+  else if(into<play){h+='<div class="go play"><div class="k">NOW &middot; ROUND '+r+' OF '+N+'</div><div class="b">'+(who(r)?'STATION '+esc(who(r).st).toUpperCase():'BREAK')+'</div><div class="d">'+(who(r)?'vs '+esc(who(r).opp)+' &middot; ':'Optional games &middot; ')+Math.max(1,Math.ceil(play-into))+' min left</div></div>'
+    +(r<N?'<div class="pl"><div class="t">NEXT &middot; ROUND '+(r+1)+' &middot; '+hm(st+r*slot*60000)+'</div><div class="o">'+line(r+1)+'</div></div>':'')}
+  else{h+='<div class="go move"><div class="k">MOVE NOW &middot; ROUND '+(r+1>N?'':(r+1)+' STARTS IN '+Math.max(1,Math.ceil(slot-into))+' MIN')+'</div><div class="b">'+(r+1>N?'GAMES FINISHED':(who(r+1)?'GO TO '+esc(who(r+1).st).toUpperCase():'BREAK'))+'</div><div class="d">'+(r+1>N?'':(who(r+1)?'vs '+esc(who(r+1).opp):'Optional games'))+'</div></div>'}
+  h+='<h2>YOUR TIMETABLE</h2>';
+  for(var i=1;i<=N;i++){var w2=who(i),x=hist[i],cur=mins>=0&&i===r&&into<play;
+    h+='<div class="pl'+(cur?' now':'')+(w2?'':' brk')+'">'+(x?'<span class="g">+'+(x.g+x.b)+'</span>':'')+'<div class="t">ROUND '+i+' &middot; '+hm(st+(i-1)*slot*60000)+'</div><div class="s">'+(w2?esc(w2.st):'Break')+'</div><div class="o">'+(w2?'vs '+esc(w2.opp)+' <span class="mut">('+w2.oc+')</span>':'Optional games: boxing, hammer, claw machine')+(x?' &middot; <span class="mut">game +'+x.g+(x.b?', camp bonus +'+x.b:'')+'</span>':'')+'</div></div>'}
+  return h}
+function roundHistHtml(){var B=DB.board(),k=me.team+'|'+(me.teamName||''),t=B.filter(function(x){return x.k===k})[0],R=DB.rounds(),sum={};R.forEach(function(x){sum[x.r]=x});
+  if(!t||!t.h||!t.h.length)return'';
+  return'<h2>MY TEAM, ROUND BY ROUND</h2><div class="card">'+t.h.slice().reverse().map(function(x){var q=sum[x.r]||{},line=q.tie?'Tied round: wins swapped, no bonus':(q.w?q.w+' won the round, bonus +'+q.bonus:'');
+    return'<div class="row"><div class="nm">Round '+x.r+(x.s?' &middot; '+esc(x.s):' &middot; break')+'<div class="mut">'+esc(line)+'</div></div><div class="v">+'+(x.g+x.b)+'<div class="mut" style="font-size:11px;text-align:right">game '+x.g+' &middot; bonus '+x.b+'</div></div></div>'}).join('')+'</div>'}
 function trank(){var B=DB.board();var k=me.team+'|'+(me.teamName||'');var t=B.filter(function(x){return x.k===k})[0];if(!t||!(t.p>0))return null;return 1+B.filter(function(o){return o.p>t.p}).length}
+setInterval(function(){if(me&&tab==='plan')render()},20000);
 function render(){
   document.querySelectorAll('.tabs button').forEach(function(b){b.classList.toggle('on',b.dataset.t===tab)});
   DB.get(me.code).then(function(p){me=p;
@@ -150,9 +184,10 @@ function render(){
     if(tab==='barhams'){
       h+='<div class="card hero"><div class="big" id="bal">'+me.barhams+'</div><small>YOUR BARHAMS</small></div>';
       h+='<h2>RECENT ACTIVITY</h2><div class="card">';
-      h+=me.tx.slice(0,8).map(function(t){return'<div class="row"><div class="nm">'+esc(t.t)+'<div class="mut">'+ago(t.ts)+'</div></div><div class="v '+(t.d>0?'pos':'neg')+'">'+(t.d>0?'+':'')+t.d+'</div></div>'}).join('')+'</div>';
+      h+=me.tx.filter(function(t){return String(t.t).indexOf('Round ')!==0}).slice(0,8).map(function(t){return'<div class="row"><div class="nm">'+esc(t.t)+'<div class="mut">'+ago(t.ts)+'</div></div><div class="v '+(t.d>0?'pos':'neg')+'">'+(t.d>0?'+':'')+t.d+'</div></div>'}).join('')+'</div>';
       h+='<div class="card mut">Earn Barhams by winning stations. Spend them at the event shop. Staff tap your wristband to add or deduct.</div>';
     }
+    if(tab==='plan'){loadPlan();h+=planHtml()}
     if(tab==='aura'){
       var l=lvl(me.aura),pos=trank(),T=DB.teams(),mz=T.MaZoo,wz=T.WiSoo,list=DB.top(10);
       h+='<div class="card hero"><div class="big">'+me.aura+'</div><small>AURA SCORE &middot; '+l.name.toUpperCase()+(pos?' &middot; TEAM RANK #'+pos:' &middot; KEEP CLIMBING')+'</small>';
@@ -164,6 +199,7 @@ function render(){
       h+='<h2>TEAM LEADERBOARD</h2><div class="mut" style="margin-bottom:6px">'+(B.length?B.length+' teams &middot; live':'The ranking starts when the first round is complete.')+'</div>';
       h+=B.map(function(t){var md=t.p>0&&t.r<=3?'<span class="medal '+['g','s','b'][t.r-1]+'">'+t.r+'</span>':'#'+t.r;
         return'<div class="lb '+(t.c==='MaZoo'?'m':'w')+(t.k===myK?' me':'')+'"><div class="r">'+md+'</div><div class="nm">'+esc(t.n)+'<div class="c">'+esc(t.c).toUpperCase()+(t.k===myK?' &middot; YOUR TEAM':'')+'</div></div><div class="v">'+t.p+'</div></div>'}).join('');
+      h+=roundHistHtml();
     }
     if(tab==='events'){
       h+='<div class="card hero"><small style="margin:0 0 6px">NEXT EVENT</small><h2 style="margin:0;font-size:30px">BARHOUMATIC EVENT IV</h2><div class="mut" style="color:#fff">El-Le’ba (The Game) &middot; 4 Dec 2026 &middot; Club 7, Maadi</div><div class="cd" id="cd"></div><a class="btn" target="_blank" rel="noopener" href="'+FORM+'">Register for Barhoumatic Event IV</a></div>';
