@@ -70,9 +70,9 @@ input{width:100%;padding:14px;border-radius:12px;border:1px solid var(--line);ba
   <main id="view"></main>
   <nav class="tabs">
     <button data-t="barhams"><span>&#129689;</span>Barhams</button>
-    <button data-t="plan"><span>&#128197;</span>My Games</button>
-    <button data-t="aura"><span>&#9889;</span>Aura Score</button>
-    <button data-t="events"><span>&#127942;</span>Events</button>
+    <button data-t="plan"><span>&#127918;</span>My Games</button>
+    <button data-t="aura"><span>&#127942;</span>Leaderboard</button>
+    <button data-t="events"><span>&#127903;</span>Events</button>
     <button data-t="profile"><span>&#128100;</span>Profile</button>
   </nav>
 </div>
@@ -175,6 +175,9 @@ function roundHistHtml(){var B=DB.board(),k=me.team+'|'+(me.teamName||''),t=B.fi
   if(!t||!t.h||!t.h.length)return'';
   return'<h2>MY TEAM, ROUND BY ROUND</h2><div class="card">'+t.h.slice().reverse().map(function(x){var q=sum[x.r]||{},line=q.tie?'Tied round: wins swapped, no bonus':(q.w?q.w+' won the round, bonus +'+q.bonus:'');
     return'<div class="row"><div class="nm">Round '+x.r+(x.s?' &middot; '+esc(x.s):' &middot; break')+'<div class="mut">'+esc(line)+'</div></div><div class="v">+'+(x.g+x.b)+'<div class="mut" style="font-size:11px;text-align:right">game '+x.g+' &middot; bonus '+x.b+'</div></div></div>'}).join('')+'</div>'}
+function myTeam(){var B=DB.board(),k=me.team+'|'+(me.teamName||''),t=B.filter(function(x){return x.k===k})[0];if(!t)return{p:0,r:null,n:B.length,t:null};return{p:t.p,r:t.p>0?1+B.filter(function(o){return o.p>t.p}).length:null,n:B.length,t:t}}
+function goTab(t){tab=t;render();scrollTo(0,0)}
+function teamStrip(){var m=myTeam();return'<div class="card" style="display:flex;align-items:center;gap:12px;justify-content:space-between;margin-bottom:8px"><div><div class="mut" style="font-size:11px;letter-spacing:.1em;font-weight:800">'+esc(me.teamName||'')+' &middot; '+esc(me.team).toUpperCase()+'</div><div style="font-family:Anton;font-size:26px">RANK '+(m.r?'#'+m.r+'<span class="mut" style="font-size:14px"> of '+(m.n||36)+'</span>':'-')+'</div></div><div style="text-align:right"><div class="mut" style="font-size:11px;letter-spacing:.1em;font-weight:800">TEAM SCORE</div><div style="font-family:Anton;font-size:30px;color:var(--yl)">'+m.p+'</div></div></div><button class="btn alt" style="width:100%;margin-bottom:6px" onclick="goTab(\'aura\')">See the full leaderboard</button>'}
 function trank(){var B=DB.board();var k=me.team+'|'+(me.teamName||'');var t=B.filter(function(x){return x.k===k})[0];if(!t||!(t.p>0))return null;return 1+B.filter(function(o){return o.p>t.p}).length}
 setInterval(function(){if(me&&tab==='plan')render()},20000);
 function render(){
@@ -187,11 +190,12 @@ function render(){
       h+=me.tx.filter(function(t){return String(t.t).indexOf('Round ')!==0}).slice(0,8).map(function(t){return'<div class="row"><div class="nm">'+esc(t.t)+'<div class="mut">'+ago(t.ts)+'</div></div><div class="v '+(t.d>0?'pos':'neg')+'">'+(t.d>0?'+':'')+t.d+'</div></div>'}).join('')+'</div>';
       h+='<div class="card mut">Earn Barhams by winning stations. Spend them at the event shop. Staff tap your wristband to add or deduct.</div>';
     }
-    if(tab==='plan'){loadPlan();h+=planHtml()}
+    if(tab==='plan'){loadPlan();h+=teamStrip()+planHtml()}
     if(tab==='aura'){
       var l=lvl(me.aura),pos=trank(),T=DB.teams(),mz=T.MaZoo,wz=T.WiSoo,list=DB.top(10);
-      h+='<div class="card hero"><div class="big">'+me.aura+'</div><small>AURA SCORE &middot; '+l.name.toUpperCase()+(pos?' &middot; TEAM RANK #'+pos:' &middot; KEEP CLIMBING')+'</small>';
-      h+='<div class="bar"><i style="width:'+l.pct+'%"></i></div><div class="mut" style="margin-top:6px;color:#fff">'+(l.next?l.left+' to '+l.next:'Top level reached')+'</div></div>';
+      var mt=myTeam();
+      h+='<div class="card hero"><div class="big">'+mt.p+'</div><small>TEAM SCORE &middot; '+(mt.r?'TEAM RANK #'+mt.r+' OF '+(mt.n||36):'KEEP CLIMBING')+'</small>';
+      h+='<div class="mut" style="margin-top:8px;color:#fff">'+esc(me.teamName||'')+' &middot; '+esc(me.team)+'</div></div>';
       h+='<h2>TEAM BATTLE</h2><div class="card vs"><div class="t mz"><b>'+mz+'</b>MaZoo</div><div class="mut">VS</div><div class="t wz"><b>'+wz+'</b>WiSoo</div></div>';
       var B=DB.board().slice().sort(function(x,y){return y.p-x.p||String(x.n).localeCompare(String(y.n))});
       B.forEach(function(t){t.r=1+B.filter(function(o){return o.p>t.p}).length});
@@ -209,7 +213,7 @@ function render(){
     if(tab==='profile'){
       var pos2=trank();
       var B=[['First tap',true],['100 Barhams',me.barhams>=100],['Level: Player',me.aura>=200],['Level: Pro',me.aura>=500],['Top 10 team',!!pos2&&pos2<=10],['Legend',me.aura>=1000]];
-      h+='<div class="card"><div class="mut">PLAYER</div><div class="row"><div class="nm">Name</div><div class="v">'+esc(me.nick)+'</div></div><div class="row"><div class="nm">Team</div><div class="v">'+me.team+'</div></div><div class="row"><div class="nm">Wristband</div><div class="v">'+me.code+'</div></div></div>';
+      h+='<div class="card"><div class="mut">PLAYER</div><div class="row"><div class="nm">Name</div><div class="v">'+esc(me.nick)+'</div></div><div class="row"><div class="nm">Team</div><div class="v">'+me.team+'</div></div><div class="row"><div class="nm">Wristband (this event)</div><div class="v">'+me.code+'</div></div></div>';
       h+='<h2>BADGES</h2><div class="card"><div class="badges">'+B.map(function(b){return'<div class="badge'+(b[1]?'':' lock')+'">'+(b[1]?'&#9989; ':'&#128274; ')+b[0]+'</div>'}).join('')+'</div></div>';
       h+='<div class="card mut">Privacy: your wristband stores only a code. Your player name, Barhams and Aura Score are shown to other players. Only the organizers can change your name.</div>';
       h+='<button class="btn alt" onclick="logout()">Log out</button>';
