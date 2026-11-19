@@ -30,6 +30,9 @@ h2{font-size:22px;margin:18px 2px 6px}
 .row{display:flex;align-items:center;gap:12px;padding:10px 0;border-top:1px solid var(--line)}.row:first-child{border-top:0}
 .row .n{width:26px;text-align:center;font-family:Anton;color:var(--mut)}
 .row .nm{flex:1;font-weight:600}.row .v{font-family:Anton;font-size:18px;color:var(--yl)}
+.lb{display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:14px;margin:6px 0;border:2px solid transparent}.lb.m{background:linear-gradient(90deg,#c4162a,#8d0f1e)}.lb.w{background:linear-gradient(90deg,#1f5fe0,#12378f)}.lb.me{border-color:var(--yl)}
+.lb .r{width:40px;text-align:center;font-family:Anton;font-size:20px}.lb .nm{flex:1;font-weight:700;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}.lb .v{font-family:Anton;font-size:22px}.lb .c{font-size:11px;opacity:.85;letter-spacing:.08em;font-weight:800}
+.medal{display:inline-block;width:34px;height:34px;line-height:34px;border-radius:50%;font-family:Anton;font-size:18px;color:#222;box-shadow:inset 0 -3px 0 rgba(0,0,0,.25)}.medal.g{background:linear-gradient(135deg,#fff3a0,#f2b800)}.medal.s{background:linear-gradient(135deg,#fff,#aeb7c4)}.medal.b{background:linear-gradient(135deg,#f6c08f,#b9692b)}
 .row.me{background:rgba(255,210,63,.12);border-radius:12px;padding:10px 8px;margin:2px -8px}
 .pos{color:var(--gn)}.neg{color:var(--rd)}
 .bar{height:12px;background:rgba(255,255,255,.12);border-radius:8px;overflow:hidden;margin-top:10px}.bar i{display:block;height:100%;background:linear-gradient(90deg,var(--rd),var(--yl));transition:width .6s}
@@ -95,24 +98,26 @@ var DemoDB=(function(){
     get:function(c){c=(c||'').trim().toUpperCase();return Promise.resolve(P[c]||null)},
     top:function(n){return codes.map(function(c){return P[c]}).sort(function(a,b){return b.aura-a.aura}).slice(0,n)},
     teams:function(){var r={MaZoo:0,WiSoo:0};codes.forEach(function(c){r[P[c].team]+=P[c].aura});return r},
+    board:function(){var m={};codes.forEach(function(c){var q=P[c],k=q.team+'|'+(q.teamName||q.team);m[k]=m[k]||{k:k,c:q.team,n:q.teamName||q.team,p:0};m[k].p=Math.max(m[k].p,q.aura)});return Object.keys(m).map(function(k){return m[k]})},
     rank:function(c){var s=codes.map(function(x){return P[x]}).sort(function(a,b){return b.aura-a.aura});var i=s.findIndex(function(p){return p.code===c});return i<0?null:i+1},
     on:function(f){subs.push(f)},
     }
 })();
 
 var FbDB=function(cfg){
-  var db,P={},top=[],teams={MaZoo:0,WiSoo:0},subs=[],mine=null,ready;
+  var db,P={},top=[],board=[],teams={MaZoo:0,WiSoo:0},subs=[],mine=null,ready;
   firebase.initializeApp(cfg);db=firebase.firestore();
   function ping(c){subs.forEach(function(f){f(c)})}
   var o={demo:false,
     get:function(c){c=(c||'').trim().toUpperCase();if(!/^[A-Z0-9-]{3,12}$/.test(c))return Promise.resolve(null);
       return db.collection('players').doc(c).get().then(function(d){if(!d.exists)return null;P[c]=d.data();
         if(mine!==c){mine=c;db.collection('players').doc(c).onSnapshot(function(s){if(s.exists){P[c]=s.data();ping(c)}})}return P[c]})},
-    top:function(n){return top.slice(0,n)},teams:function(){return teams},
+    top:function(n){return top.slice(0,n)},teams:function(){return teams},board:function(){return board},
     rank:function(c){var i=top.findIndex(function(p){return p.code===c});return i<0?null:i+1},
     on:function(f){subs.push(f)},
     };
   db.collection('players').orderBy('aura','desc').limit(10).onSnapshot(function(q){top=q.docs.map(function(d){return d.data()});ping()});
+  db.collection('meta').doc('leaderboard').onSnapshot(function(d){if(d.exists){board=d.data().teams||[];ping()}});
   db.collection('meta').doc('teams').onSnapshot(function(d){if(d.exists){teams={MaZoo:d.data().MaZoo||0,WiSoo:d.data().WiSoo||0};ping()}});
   return o};
 var DB=DemoDB;
@@ -152,9 +157,12 @@ function render(){
       h+='<div class="card hero"><div class="big">'+me.aura+'</div><small>AURA SCORE &middot; '+l.name.toUpperCase()+(pos?' &middot; RANK #'+pos:' &middot; KEEP CLIMBING')+'</small>';
       h+='<div class="bar"><i style="width:'+l.pct+'%"></i></div><div class="mut" style="margin-top:6px;color:#fff">'+(l.next?l.left+' to '+l.next:'Top level reached')+'</div></div>';
       h+='<h2>TEAM BATTLE</h2><div class="card vs"><div class="t mz"><b>'+mz+'</b>MaZoo</div><div class="mut">VS</div><div class="t wz"><b>'+wz+'</b>WiSoo</div></div>';
-      h+='<h2>LEADERBOARD</h2><div class="card">'+list.map(function(p,i){return'<div class="row'+(p.code===me.code?' me':'')+'"><div class="n">'+(i+1)+'</div><div class="nm">'+esc(p.nick)+' <span class="tag">'+p.team+'</span></div><div class="v">'+p.aura+'</div></div>'}).join('');
-      if(!pos)h+='<div class="row me"><div class="n">&middot;</div><div class="nm">'+esc(me.nick)+'</div><div class="v">'+me.aura+'</div></div>';
-      h+='</div>';
+      var B=DB.board().slice().sort(function(x,y){return y.p-x.p||String(x.n).localeCompare(String(y.n))});
+      B.forEach(function(t){t.r=1+B.filter(function(o){return o.p>t.p}).length});
+      var myK=me.team+'|'+(me.teamName||'');
+      h+='<h2>TEAM LEADERBOARD</h2><div class="mut" style="margin-bottom:6px">'+(B.length?B.length+' teams &middot; live':'The ranking starts when the first round is complete.')+'</div>';
+      h+=B.map(function(t){var md=t.p>0&&t.r<=3?'<span class="medal '+['g','s','b'][t.r-1]+'">'+t.r+'</span>':'#'+t.r;
+        return'<div class="lb '+(t.c==='MaZoo'?'m':'w')+(t.k===myK?' me':'')+'"><div class="r">'+md+'</div><div class="nm">'+esc(t.n)+'<div class="c">'+esc(t.c).toUpperCase()+(t.k===myK?' &middot; YOUR TEAM':'')+'</div></div><div class="v">'+t.p+'</div></div>'}).join('');
     }
     if(tab==='events'){
       h+='<div class="card hero"><small style="margin:0 0 6px">NEXT EVENT</small><h2 style="margin:0;font-size:30px">BARHOUMATIC EVENT IV</h2><div class="mut" style="color:#fff">El-Le’ba (The Game) &middot; 4 Dec 2026 &middot; Club 7, Maadi</div><div class="cd" id="cd"></div><a class="btn" target="_blank" rel="noopener" href="'+FORM+'">Register for Barhoumatic Event IV</a></div>';

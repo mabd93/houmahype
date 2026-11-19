@@ -188,6 +188,17 @@ async function settleRound(db, round, reason) {
       tx.set(tRef, upd, { merge: true });
     }
 
+    // Public leaderboard for the student app: every team with its total (game points + camp bonus of all closed rounds).
+    const totals = {};
+    closedAll.docs.map(d => d.data()).filter(r => r.round !== round).forEach(r => { Object.keys(r.teamPoints || {}).forEach(k => { totals[k] = (totals[k] || 0) + r.teamPoints[k]; }); });
+    Object.keys(res.teamPoints).forEach(k => { totals[k] = (totals[k] || 0) + res.teamPoints[k]; });
+    const names = {};
+    players.docs.forEach(d => { const p = d.data(); if (p.camp && p.teamName) names[S.teamKey(p.camp, p.teamName)] = true; });
+    Object.keys(totals).forEach(k => { names[k] = true; });
+    const board = Object.keys(names).map(k => ({ k: k, c: S.campOf(k), n: k.slice(k.indexOf('|') + 1), p: totals[k] || 0 }))
+      .sort((x, y) => y.p - x.p || x.n.localeCompare(y.n));
+    tx.set(db.collection('meta').doc('leaderboard'), { teams: board, updatedAt: now });
+
     tx.set(rRef, {
       round: round, closed: true, closedAt: (old && old.closedAt) || now, updatedAt: now, version: ((old && old.version) || 0) + 1,
       wins: res.wins, threshold: res.threshold, winnerCamp: res.winnerCamp, tie: res.tie, bonus: res.bonus,

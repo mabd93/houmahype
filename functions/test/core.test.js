@@ -124,3 +124,16 @@ test('roster changes after a round closed do not move points already given', asy
   await core.adminMatch(db, 'full', { action: 'set', round: 1, station: 'Station 1', winner: 'A', amount: 10 }); // same result again
   assert.equal(aura(db, 'M1001'), before);
 });
+
+test('public leaderboard lists every team with its total, including teams on a break', async () => {
+  const db = setup(1);
+  await win(db, 1, 'M1003', 20); await win(db, 2, 'M2001', 30); await win(db, 3, 'W3002', 40);
+  const lb = db.get('meta/leaderboard');
+  assert.equal(lb.teams.length, 8);                                   // 4 + 4 teams, resting ones included
+  const pts = {}; lb.teams.forEach(x => { pts[x.k] = x.p; });
+  assert.equal(pts[S.teamKey('MaZoo', 'T1')], 21);                     // 20 + bonus 1
+  assert.equal(pts[S.teamKey('MaZoo', 'T4')], 1);                      // rested, still got the camp bonus
+  assert.equal(pts[S.teamKey('WiSoo', 'T3')], 40);
+  assert.equal(pts[S.teamKey('WiSoo', 'T1')], 0);
+  assert.equal(lb.teams[0].p, 40);                                     // sorted best first
+});
