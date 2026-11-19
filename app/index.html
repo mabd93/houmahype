@@ -14,7 +14,7 @@
 :root{--bg:#081230;--panel:#0f1d46;--line:rgba(255,255,255,.14);--ink:#fff;--mut:#9fb0d6;--rd:#ff3b4e;--bl:#2f7bff;--yl:#ffd23f;--gn:#35d07f}
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 html,body{margin:0;background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;min-height:100%}
-body{padding-top:env(safe-area-inset-top);padding-bottom:calc(76px + env(safe-area-inset-bottom));max-width:520px;margin:0 auto;background:radial-gradient(120% 60% at 0% 0%,rgba(255,59,78,.25),transparent 60%),radial-gradient(120% 60% at 100% 10%,rgba(47,123,255,.3),transparent 60%),var(--bg);background-attachment:fixed}
+body{padding-top:env(safe-area-inset-top);padding-bottom:calc(76px + env(safe-area-inset-bottom));max-width:520px;margin:0 auto;background:radial-gradient(120% 60% at 0% 0%,rgba(var(--g1,255,59,78),.25),transparent 60%),radial-gradient(120% 60% at 100% 10%,rgba(var(--g2,47,123,255),.3),transparent 60%),var(--bg);background-attachment:fixed}
 h1,h2,.big,.tabs b{font-family:Anton,Impact,sans-serif;font-weight:400;letter-spacing:.03em}
 .top{display:flex;justify-content:space-between;align-items:center;padding:16px 18px 6px}
 .logo{font-family:Anton,Impact,sans-serif;font-size:22px;letter-spacing:.05em}.logo i{font-style:normal;color:var(--yl)}
@@ -42,6 +42,8 @@ h2{font-size:22px;margin:18px 2px 6px}
 .vs .t{border-radius:14px;padding:14px 6px}.vs .t b{display:block;font-family:Anton;font-size:30px}
 .mz{background:rgba(255,59,78,.3);border:1px solid var(--rd)}.wz{background:rgba(47,123,255,.3);border:1px solid var(--bl)}
 .btn{display:block;width:100%;text-align:center;padding:14px;border-radius:14px;border:0;background:var(--rd);color:#fff;font-weight:800;font-size:15px;text-decoration:none;box-shadow:4px 4px 0 var(--bl);cursor:pointer}
+.lv{border:2px solid #fff;border-radius:18px;padding:18px 16px;margin:12px 0;text-align:center;background:linear-gradient(135deg,rgba(var(--g1,255,59,78),.45),rgba(var(--g2,47,123,255),.5))}.lv .n{font-family:Anton;font-size:34px;letter-spacing:.04em}.lv .k{font-size:12px;letter-spacing:.14em;font-weight:800;opacity:.9}.lv .p{font-family:Anton;font-size:44px;color:var(--yl)}
+.pn{margin-top:14px;text-align:left}.pn .t{font-family:Anton;font-size:20px;margin:6px 0}.pn .ok{color:var(--gn)}
 .btn.alt{background:transparent;border:2px solid var(--line);box-shadow:none;color:var(--ink)}
 input{width:100%;padding:14px;border-radius:12px;border:1px solid var(--line);background:rgba(255,255,255,.08);color:#fff;font-size:16px;margin:8px 0}
 .tabs{position:fixed;left:0;right:0;bottom:0;max-width:520px;margin:0 auto;display:grid;grid-template-columns:repeat(5,1fr);background:rgba(8,18,48,.96);backdrop-filter:blur(10px);border-top:1px solid var(--line);padding:6px 6px calc(6px + env(safe-area-inset-bottom))}
@@ -62,6 +64,10 @@ input{width:100%;padding:14px;border-radius:12px;border:1px solid var(--line);ba
   <input id="code" placeholder="Wristband code, e.g. M001" autocapitalize="characters" autocomplete="off">
   <button class="btn" onclick="doLogin(document.getElementById('code').value)">Enter the arena</button>
   <p id="lerr" class="neg" style="min-height:20px"></p>
+  <div class="mut" style="margin-top:8px">Your account keeps your points for the next events.</div>
+  <button class="btn alt" style="margin-top:8px" onclick="showPanel('signin')">Sign in with my password</button>
+  <button class="btn alt" style="margin-top:8px" onclick="showPanel('activate')">First time? Activate my account</button>
+  <div id="panel" class="pn"></div>
 </div>
 
 <div id="app" class="hidden">
@@ -101,6 +107,7 @@ var DemoDB=(function(){
     top:function(n){return codes.map(function(c){return P[c]}).sort(function(a,b){return b.aura-a.aura}).slice(0,n)},
     teams:function(){var r={MaZoo:0,WiSoo:0};codes.forEach(function(c){r[P[c].team]+=P[c].aura});return r},
     rounds:function(){return []},event:function(){return null},sched:function(){return Promise.resolve([])},
+    auth:null,eventId:function(){return Promise.resolve('event4')},member:function(){return Promise.resolve(null)},priv:function(){return Promise.resolve(null)},signIn:function(){return Promise.reject({code:'demo'})},signOut:function(){return Promise.resolve()},claim:function(){return Promise.reject({code:'demo'})},link:function(){return Promise.reject({code:'demo'})},
     board:function(){var m={};codes.forEach(function(c){var q=P[c],k=q.team+'|'+(q.teamName||q.team);m[k]=m[k]||{k:k,c:q.team,n:q.teamName||q.team,p:0};m[k].p=Math.max(m[k].p,q.aura)});return Object.keys(m).map(function(k){return m[k]})},
     rank:function(c){var s=codes.map(function(x){return P[x]}).sort(function(a,b){return b.aura-a.aura});var i=s.findIndex(function(p){return p.code===c});return i<0?null:i+1},
     on:function(f){subs.push(f)},
@@ -116,6 +123,13 @@ var FbDB=function(cfg){
       return db.collection('players').doc(c).get().then(function(d){if(!d.exists)return null;P[c]=d.data();
         if(mine!==c){mine=c;db.collection('players').doc(c).onSnapshot(function(s){if(s.exists){P[c]=s.data();ping(c)}})}return P[c]})},
     top:function(n){return top.slice(0,n)},teams:function(){return teams},board:function(){return board},rounds:function(){return rounds},event:function(){return ev},
+    auth:firebase.auth(),
+    eventId:function(){return db.collection('meta').doc('event').get().then(function(d){return d.exists&&d.data().id||'event4'}).catch(function(){return 'event4'})},
+    member:function(uid){return db.collection('members').doc(uid).get().then(function(d){return d.exists?d.data():null})},
+    priv:function(code){return db.collection('players_private').doc(code).get().then(function(d){return d.exists?d.data():null}).catch(function(){return null})},
+    signIn:function(e,pw){return firebase.auth().signInWithEmailAndPassword(e,pw)},signOut:function(){return firebase.auth().signOut()},
+    claim:function(code,act,pw){return firebase.app().functions('europe-west1').httpsCallable('claimAccount')({code:code,activation:act,password:pw}).then(function(r){return r.data})},
+    link:function(code,act){return firebase.app().functions('europe-west1').httpsCallable('linkBand')({code:code,activation:act}).then(function(r){return r.data})},
     sched:function(k){return db.collection('schedule').where('teams','array-contains',k).get().then(function(q){return q.docs.map(function(d){return d.data()})})},
     rank:function(c){var i=top.findIndex(function(p){return p.code===c});return i<0?null:i+1},
     on:function(f){subs.push(f)},
@@ -127,24 +141,57 @@ var FbDB=function(cfg){
   return o};
 var DB=DemoDB;
 function loadFirebase(cb){var cfg=window.HH_FIREBASE;if(!cfg||!navigator.onLine){cb();return}
-  var V='https://www.gstatic.com/firebasejs/10.14.1/',L=['firebase-app-compat.js','firebase-firestore-compat.js'].concat(window.HH_BAND?['firebase-auth-compat.js']:[]),i=0;
+  var V='https://www.gstatic.com/firebasejs/10.14.1/',L=['firebase-app-compat.js','firebase-firestore-compat.js','firebase-auth-compat.js','firebase-functions-compat.js'],i=0;
   (function next(){if(i>=L.length){try{DB=FbDB(cfg)}catch(e){DB=DemoDB}cb();return}var s=document.createElement('script');s.src=V+L[i++];s.onload=next;s.onerror=function(){cb()};document.head.appendChild(s)})()}
 
 /* ============ APP ============ */
-var LV=[['Rookie',0],['Player',200],['Pro',500],['Legend',1000]];
+var LEVELS=[['Rookie',0,'255,59,78','47,123,255'],['Rising',150,'255,140,40','47,123,255'],['Player',400,'53,208,127','20,150,170'],['Challenger',800,'0,200,230','130,80,230'],['Contender',1300,'230,60,200','80,70,220'],['Pro',2000,'255,200,40','255,59,78'],['Elite',3000,'200,210,230','47,123,255'],['Champion',4300,'40,220,150','255,200,40'],['Master',6000,'150,90,255','255,80,160'],['Legend',8000,'255,215,60','255,255,255']];
 var EVENT4=new Date('2026-12-04T16:00:00+02:00');
 var FORM='https://docs.google.com/forms/d/e/1FAIpQLSdvco3ygC1QWl_FF5PHsXBNhUnm9QDb0ICy5zIFxjpw72dOHA/viewform';
 var me=null,tab='barhams',view=document.getElementById('view');
 function $(i){return document.getElementById(i)}
 function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]})}
 function store(k,v){try{if(v===undefined)return localStorage.getItem(k);if(v===null)localStorage.removeItem(k);else localStorage.setItem(k,v)}catch(e){return null}}
-function lvl(a){var i=0;LV.forEach(function(l,j){if(a>=l[1])i=j});var nx=LV[i+1];return{name:LV[i][0],next:nx?nx[0]:null,pct:nx?Math.round((a-LV[i][1])/(nx[1]-LV[i][1])*100):100,left:nx?nx[1]-a:0}}
+function lvl(a){var i=0;LEVELS.forEach(function(l,j){if(a>=l[1])i=j});var nx=LEVELS[i+1];return{i:i,name:LEVELS[i][0],c1:LEVELS[i][2],c2:LEVELS[i][3],next:nx?nx[0]:null,pct:nx?Math.round((a-LEVELS[i][1])/(nx[1]-LEVELS[i][1])*100):100,left:nx?nx[1]-a:0}}
 function ago(ts){var s=Math.floor((Date.now()-ts)/1000);return s<60?'just now':s<3600?Math.floor(s/60)+' min ago':Math.floor(s/3600)+' h ago'}
 
 function doLogin(c){DB.get(c).then(function(p){if(!p){$('lerr').textContent='Code not found. Check the number on your wristband.';return}store('hh_code',p.code);start(p.code)})}
 function start(c){DB.get(c).then(function(p){if(!p){store('hh_code',null);showLogin();return}me=p;$('login').classList.add('hidden');$('app').classList.remove('hidden');$('demonote').textContent=DB.demo?'DEMO MODE: sample players and simulated live scores':'';render()})}
+
+/* ============ ACCOUNTS (lifetime account: ID or wristband code + own password) ============ */
+var ACC=null,EVID='event4',MAILD='@members.houmahype.com';
+function setTheme(l){var r=document.documentElement.style;if(l){r.setProperty('--g1',l.c1);r.setProperty('--g2',l.c2)}else{r.removeProperty('--g1');r.removeProperty('--g2')}}
+function lifetimeNow(){if(!ACC||!ACC.member)return 0;var ev=ACC.member.events||{},sum=0;Object.keys(ev).forEach(function(k){if(k!==EVID)sum+=ev[k].points||0});return sum+(me?myTeam().p:0)}
+function errText(e){var c=e&&e.code||'';
+  if(c.indexOf('auth/')===0)return c==='auth/too-many-requests'?'Too many tries. Wait a few minutes.':'Wrong ID or password.';
+  if(c==='demo')return'Accounts are not available in demo mode.';
+  return(e&&e.message)||'Something went wrong. Try again.'}
+function showPanel(kind){var h='';
+  if(kind==='signin')h='<div class="t">SIGN IN</div><input id="si_id" placeholder="Your ID or wristband code" autocapitalize="none" autocomplete="username"><input id="si_pw" type="password" placeholder="Password" autocomplete="current-password"><button class="btn" onclick="doSignIn()">Sign in</button>';
+  if(kind==='activate')h='<div class="t">ACTIVATE</div><div class="mut">Type the code on your wristband, the activation code from your organizers, and choose a password (8 characters or more).</div><input id="ac_code" placeholder="Wristband code, e.g. M001" autocapitalize="characters" autocomplete="off"><input id="ac_act" inputmode="numeric" placeholder="Activation code (6 digits)" autocomplete="off"><input id="ac_pw" type="password" placeholder="Choose a password" autocomplete="new-password"><button class="btn" onclick="doActivate()">Create my account</button>';
+  if(kind==='link')h='<div class="t">NEW EVENT</div><div class="mut">Link your new wristband to your account: type its code and the activation code you received.</div><input id="lk_code" placeholder="Wristband code" autocapitalize="characters" autocomplete="off"><input id="lk_act" inputmode="numeric" placeholder="Activation code (6 digits)" autocomplete="off"><button class="btn" onclick="doLink()">Link my wristband</button>';
+  $('panel').innerHTML=h;$('lerr').textContent=''}
+function openSign(){showLogin();showPanel('signin')}
+function busy(on){var b=document.querySelectorAll('#panel .btn');for(var i=0;i<b.length;i++)b[i].disabled=on}
+function emailFor(idOrCode){idOrCode=(idOrCode||'').trim();
+  if(/^[a-zA-Z0-9]{8}$/.test(idOrCode))return Promise.resolve(idOrCode.toLowerCase()+MAILD);
+  return DB.get(idOrCode).then(function(p){return p&&p.mid?p.mid+MAILD:null})}
+function doSignIn(){var id=$('si_id').value,pw=$('si_pw').value;if(!id||!pw){$('lerr').textContent='Type your ID (or wristband code) and password.';return}
+  busy(true);emailFor(id).then(function(em){if(!em)throw{code:'auth/wrong-password'};return DB.signIn(em,pw)}).then(function(c){return loadAcct(c.user,true)}).catch(function(e){$('lerr').textContent=errText(e)}).then(function(){busy(false)})}
+function doActivate(){var c=$('ac_code').value.trim().toUpperCase(),a=$('ac_act').value,pw=$('ac_pw').value;if(!c||!a||!pw){$('lerr').textContent='Fill in all three fields.';return}
+  busy(true);DB.claim(c,a,pw).then(function(r){return DB.signIn(r.email,pw).then(function(x){return loadAcct(x.user,true).then(function(){alert('Account created. Your ID: '+r.memberId+'\nNext time sign in with this ID (or your wristband code) and your password.')})})}).catch(function(e){$('lerr').textContent=errText(e)}).then(function(){busy(false)})}
+function doLink(){var c=$('lk_code').value.trim().toUpperCase(),a=$('lk_act').value;if(!c||!a){$('lerr').textContent='Fill in both fields.';return}
+  busy(true);DB.link(c,a).then(function(){return loadAcct(DB.auth.currentUser,true)}).catch(function(e){$('lerr').textContent=errText(e)}).then(function(){busy(false)})}
+var acctBusy=null;
+function loadAcct(u,go){if(!u)return Promise.resolve();
+  return Promise.all([DB.member(u.uid),DB.eventId()]).then(function(r){var m=r[0];EVID=r[1];
+    if(!m){ACC=null;return}
+    var code=m.codes&&m.codes[EVID];ACC={uid:u.uid,member:m,priv:null,code:code||null};
+    if(!code){if(go){showLogin();showPanel('link');$('lerr').textContent='Your account is ready. Link your wristband for this event.'}return}
+    return DB.priv(code).then(function(pr){ACC.priv=pr;store('hh_code',code);setTheme(lvl(lifetimeNow()));if(go||!me||me.code!==code)start(code);else render()})})}
+function doSignOut(){setTheme(null);ACC=null;return DB.signOut().catch(function(){})}
 function showLogin(){$('app').classList.add('hidden');$('login').classList.remove('hidden')}
-function logout(){store('hh_code',null);me=null;showLogin()}
+function logout(){store('hh_code',null);me=null;doSignOut().then(showLogin)}
 
 
 
@@ -211,11 +258,17 @@ function render(){
       h+='<a class="btn alt" href="/#portfolio">Watch event videos</a>';
     }
     if(tab==='profile'){
-      var pos2=trank();
-      var B=[['First tap',true],['100 Barhams',me.barhams>=100],['Level: Player',me.aura>=200],['Level: Pro',me.aura>=500],['Top 10 team',!!pos2&&pos2<=10],['Legend',me.aura>=1000]];
-      h+='<div class="card"><div class="mut">PLAYER</div><div class="row"><div class="nm">Name</div><div class="v">'+esc(me.nick)+'</div></div><div class="row"><div class="nm">Team</div><div class="v">'+me.team+'</div></div><div class="row"><div class="nm">Wristband (this event)</div><div class="v">'+me.code+'</div></div></div>';
+      var pos2=trank(),mine=ACC&&ACC.code===me.code,pr=mine?ACC.priv:null;
+      var B=[['First tap',true],['100 Barhams',me.barhams>=100],['Top 10 team',!!pos2&&pos2<=10]];
+      if(mine){var tot=lifetimeNow(),lv=lvl(tot),evs=ACC.member.events||{};setTheme(lv);
+        h+='<div class="lv"><div class="k">LEVEL '+(lv.i+1)+' OF '+LEVELS.length+'</div><div class="n">'+lv.name.toUpperCase()+'</div><div class="p">'+tot+'</div><div class="k">LIFETIME POINTS</div><div class="bar"><i style="width:'+lv.pct+'%"></i></div><div class="mut" style="margin-top:6px;color:#fff">'+(lv.next?lv.left+' points to '+lv.next:'Top level reached')+'</div></div>';
+        h+='<div class="card"><div class="mut">ME</div><div class="row"><div class="nm">Name</div><div class="v">'+esc((pr&&pr.name)||'-')+'</div></div><div class="row"><div class="nm">Hoodie size</div><div class="v">'+esc((pr&&pr.tshirt)||'-')+'</div></div><div class="row"><div class="nm">Meal</div><div class="v">'+esc((pr&&pr.meal)||'-')+'</div></div><div class="row"><div class="nm">Team</div><div class="v">'+esc(me.teamName||'')+' &middot; '+esc(me.team)+'</div></div><div class="row"><div class="nm">Wristband (this event)</div><div class="v">'+me.code+'</div></div><div class="row"><div class="nm">My ID</div><div class="v">'+esc(ACC.member.memberId)+'</div></div></div>';
+        var ek=Object.keys(evs).filter(function(k){return k!==EVID}).sort().reverse();
+        h+='<h2>MY EVENTS</h2><div class="card"><div class="row"><div class="nm">This event</div><div class="v">'+myTeam().p+'</div></div>'+ek.map(function(k){var e=evs[k];return'<div class="row"><div class="nm">'+esc(k.replace('event','Event '))+'<div class="mut">'+esc(e.team||'')+(e.rank?' &middot; rank '+e.rank+' of '+(e.of||'?'):'')+'</div></div><div class="v">'+(e.points||0)+'</div></div>'}).join('')+'</div>'}
+      else if(ACC){h+='<div class="card">This wristband is not linked to your account.'+(ACC.code?'<button class="btn" style="margin-top:10px" onclick="start(\''+ACC.code+'\')">Go to my wristband</button>':'')+'</div>'}
+      else{h+='<div class="card"><div class="mut">PLAYER</div><div class="row"><div class="nm">Team</div><div class="v">'+esc(me.teamName||'')+' &middot; '+esc(me.team)+'</div></div><div class="row"><div class="nm">Wristband (this event)</div><div class="v">'+me.code+'</div></div></div><div class="card">Sign in to see your name, hoodie size and meal, and to keep your points and level for the next events.<button class="btn" style="margin-top:10px" onclick="openSign()">Sign in / activate</button></div>'}
       h+='<h2>BADGES</h2><div class="card"><div class="badges">'+B.map(function(b){return'<div class="badge'+(b[1]?'':' lock')+'">'+(b[1]?'&#9989; ':'&#128274; ')+b[0]+'</div>'}).join('')+'</div></div>';
-      h+='<div class="card mut">Privacy: your wristband stores only a code. Your player name, Barhams and Aura Score are shown to other players. Only the organizers can change your name.</div>';
+      h+='<div class="card mut">Privacy: your name, hoodie size and meal are visible only to you and the organizers. Other players see your team, your code and the scores.</div>';
       h+='<button class="btn alt" onclick="logout()">Log out</button>';
     }
     view.innerHTML=h;
@@ -242,7 +295,8 @@ function staffRedirect(code,next){
 (function(){var q=null;try{q=new URLSearchParams(location.search).get('w')}catch(e){}
   var c=q||store('hh_code');window.HH_BAND=q;
   if(q){try{history.replaceState(null,'',location.pathname)}catch(e){}}
-  loadFirebase(function(){staffRedirect(q,function(){if(c)start(c.toUpperCase());else showLogin()})});
+  loadFirebase(function(){staffRedirect(q,function(){if(c)start(c.toUpperCase());else showLogin()});
+    try{if(DB.auth)DB.auth.onAuthStateChanged(function(u){if(u&&!ACC&&!acctBusy){acctBusy=1;loadAcct(u,false).catch(function(){}).then(function(){acctBusy=null})}})}catch(e){}});
   if('serviceWorker' in navigator)navigator.serviceWorker.register('sw.js').catch(function(){})})();
 </script>
 </body></html>

@@ -39,7 +39,14 @@ service cloud.firestore {
     }
     // Names, phones, school, T-shirt, meal: staff read only, written only by the sheet sync
     match /players_private/{code} {
-      allow read: if isStaff();
+      allow read: if isStaff() || (request.auth != null && resource.data.get('uid', '') == request.auth.uid);
+      allow write: if false;
+    }
+    // Activation codes (hashed): the server only
+    match /players_secret/{code} { allow read, write: if false; }
+    // Lifetime account of a student: the owner and staff can read it, only the server writes it
+    match /members/{uid} {
+      allow read: if isStaff() || (request.auth != null && request.auth.uid == uid);
       allow write: if false;
     }
     // Staff list from the sheet (roles, stations, scopes)

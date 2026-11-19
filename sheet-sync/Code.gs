@@ -28,6 +28,7 @@ function onOpen() {
     .addItem('Sync now (everything)', 'syncNow')
     .addSeparator()
     .addItem('Create Matches tab (pairings)', 'createMatchesTab')
+      .addItem('Create activation codes', 'createActivationCodes')
     .addItem('Install 5-minute trigger', 'installTrigger')
     .addItem('Remove 5-minute trigger', 'removeTrigger')
     .addToUi();
@@ -48,9 +49,10 @@ function dryRun() {
 
 function safeSync() {
   var p = syncPlayers_(false);
+  var ac = syncActivation_();
   var msg = 'Safe sync. Players: ' + p.create + ' created, ' + p.update + ' updated, ' + p.same + ' unchanged' +
-    (p.startChanged ? ', ' + p.startChanged + ' changed Starting Barhams waiting for approval (not applied)' : '') + '.';
-  if (p.create || p.update || p.startChanged) log_(msg);
+    (p.startChanged ? ', ' + p.startChanged + ' changed Starting Barhams waiting for approval (not applied)' : '') + '.' + (ac.n ? ' Activation codes created: ' + ac.n + '.' : '');
+  if (p.create || p.update || p.startChanged || ac.n) log_(msg);
   toast_(msg);
 }
 
@@ -60,9 +62,10 @@ function syncNow() {
   var pr = syncPrices_();
   var mt = syncMatches_();
   var ec = syncEvent_();
+  var ac = syncActivation_();
   var msg = 'Sync now. Players: ' + p.create + ' created, ' + p.update + ' updated, ' + p.same + ' unchanged. Staff directory: ' + st.dir +
     ', logins linked: ' + st.linked + ', logins removed: ' + st.removed + (st.noAccount.length ? ', no account yet for: ' + st.noAccount.join(', ') : '') +
-    '. Prices: ' + pr.items + ' items, ' + pr.rules + ' rules. ' + mt.text + ' ' + ec;
+    '. Prices: ' + pr.items + ' items, ' + pr.rules + ' rules. ' + mt.text + ' ' + ec + ' Activation codes created: ' + ac.n + '.';
   log_(msg);
   toast_(msg);
 }
@@ -136,10 +139,52 @@ function readPrices_() {
   return { items: items, rules: rules };
 }
 
+/* ---------- activation codes (student accounts) ----------
+ * Players tab column Q "Activation code": a 6-digit code for each player, created once (only when the cell is empty).
+ * The app only receives a salted hash of it. The student types it ONCE together with a password of their own to create the lifetime account.
+ * To give a player a new code (lost card): clear their cell in column Q, then run "Create activation codes". Only works before activation.
+ */
+function hex_(bytes) { return bytes.map(function (b) { return ('0' + ((b + 256) % 256).toString(16)).slice(-2); }).join(''); }
+
+function syncActivation_() {
+  // Never two runs at once (the 5-minute trigger and a manual run could otherwise create two different codes).
+  var props = PropertiesService.getScriptProperties();
+  if (Date.now() - Number(props.getProperty('ACT_LOCK') || 0) < 90000) return { n: 0 };
+  props.setProperty('ACT_LOCK', String(Date.now()));
+  try { return syncActivationInner_(); } finally { props.deleteProperty('ACT_LOCK'); }
+}
+
+function syncActivationInner_() {
+  var s = sheet_('Players');
+  s.getRange('Q1').setValue('Activation code').setFontWeight('bold');
+  var codes = s.getRange('A2:A201').getValues(), names = s.getRange('F2:F201').getValues();
+  var rng = s.getRange('Q2:Q201'); rng.setNumberFormat('@');
+  var cur = rng.getValues(), writes = [], n = 0;
+  for (var i = 0; i < codes.length; i++) {
+    var code = String(codes[i][0]).trim();
+    if (!code || !String(names[i][0]).trim() || String(cur[i][0]).trim()) continue;
+    var act = String(Math.floor(100000 + Math.random() * 900000));
+    var salt = Utilities.getUuid().replace(/-/g, '').slice(0, 12);
+    var hash = hex_(Utilities.computeDigest(Utilities.DigestAlgorithm.SHA_256, salt + ':' + code + ':' + act, Utilities.Charset.UTF_8));
+    cur[i][0] = act; n++;
+    writes.push({ update: { name: DOCS + '/players_secret/' + code, fields: fields_({ salt: salt, hash: hash, fails: 0, lockUntil: 0 }) }, updateMask: { fieldPaths: ['salt', 'hash', 'fails', 'lockUntil'] } });
+  }
+  if (n) {
+    for (var j = 0; j < writes.length; j += 200) commit_(writes.slice(j, j + 200));
+    rng.setValues(cur); // only after the database accepted the hashes
+  }
+  return { n: n };
+}
+
+function createActivationCodes() {
+  var r = syncActivation_();
+  toast_(r.n ? 'Created ' + r.n + ' activation codes (Players tab, column Q).' : 'Every player already has an activation code.');
+}
+
 /* ---------- event clock (for the student "My Games" tab) ----------
  * Reads the Rotation tab: B1 start time (e.g. 09:00), B2 play minutes, B3 switch minutes. The event date is set here (Cairo time, UTC+2 in December).
  */
-var EVENT_DATE = '2026-12-04', EVENT_OFFSET = '+02:00';
+var EVENT_ID = 'event4', EVENT_DATE = '2026-12-04', EVENT_OFFSET = '+02:00';
 
 function syncEvent_() {
   var s = SpreadsheetApp.getActive().getSheetByName('Rotation');
@@ -150,7 +195,7 @@ function syncEvent_() {
   if (!m || !play || !chg) return 'Event clock: CHECK Rotation B1:B3 (start time, play minutes, switch minutes).';
   var hh = ('0' + m[1]).slice(-2);
   var start = EVENT_DATE + 'T' + hh + ':' + m[2] + ':00' + EVENT_OFFSET;
-  commit_([{ update: { name: DOCS + '/meta/event', fields: fields_({ start: start, play: play, change: chg }) } }]);
+  commit_([{ update: { name: DOCS + '/meta/event', fields: fields_({ id: EVENT_ID, start: start, play: play, change: chg }) } }]);
   return 'Event clock: ' + start + ', ' + play + ' min play + ' + chg + ' min switch.';
 }
 
@@ -261,7 +306,7 @@ function syncPlayers_(dry) {
       }
     }
     if (!dry) {
-      writes.push({ update: { name: DOCS + '/players_private/' + p.code, fields: fields_(priv) } });
+      writes.push({ update: { name: DOCS + '/players_private/' + p.code, fields: fields_(priv) }, updateMask: { fieldPaths: Object.keys(priv) } });
       touched.push({ code: p.code, h: h, s: st ? st.s : p.start });
     }
   });

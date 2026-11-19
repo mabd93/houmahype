@@ -216,4 +216,4 @@ async function settleRound(db, round, reason) {
   });
 }
 
-module.exports = { recordMatch, adminMatch, settleRound, Fail, FULL };
+module.exports = { recordMatch, adminMatch, settleRound, Fail, FULL, staffOf, isFull };
