@@ -142,6 +142,7 @@ function showLogin(){$('app').classList.add('hidden');$('login').classList.remov
 function logout(){store('hh_code',null);me=null;showLogin()}
 
 
+function trank(){var B=DB.board();var k=me.team+'|'+(me.teamName||'');var t=B.filter(function(x){return x.k===k})[0];if(!t||!(t.p>0))return null;return 1+B.filter(function(o){return o.p>t.p}).length}
 function render(){
   document.querySelectorAll('.tabs button').forEach(function(b){b.classList.toggle('on',b.dataset.t===tab)});
   DB.get(me.code).then(function(p){me=p;
@@ -153,8 +154,8 @@ function render(){
       h+='<div class="card mut">Earn Barhams by winning stations. Spend them at the event shop. Staff tap your wristband to add or deduct.</div>';
     }
     if(tab==='aura'){
-      var l=lvl(me.aura),pos=DB.rank(me.code),T=DB.teams(),mz=T.MaZoo,wz=T.WiSoo,list=DB.top(10);
-      h+='<div class="card hero"><div class="big">'+me.aura+'</div><small>AURA SCORE &middot; '+l.name.toUpperCase()+(pos?' &middot; RANK #'+pos:' &middot; KEEP CLIMBING')+'</small>';
+      var l=lvl(me.aura),pos=trank(),T=DB.teams(),mz=T.MaZoo,wz=T.WiSoo,list=DB.top(10);
+      h+='<div class="card hero"><div class="big">'+me.aura+'</div><small>AURA SCORE &middot; '+l.name.toUpperCase()+(pos?' &middot; TEAM RANK #'+pos:' &middot; KEEP CLIMBING')+'</small>';
       h+='<div class="bar"><i style="width:'+l.pct+'%"></i></div><div class="mut" style="margin-top:6px;color:#fff">'+(l.next?l.left+' to '+l.next:'Top level reached')+'</div></div>';
       h+='<h2>TEAM BATTLE</h2><div class="card vs"><div class="t mz"><b>'+mz+'</b>MaZoo</div><div class="mut">VS</div><div class="t wz"><b>'+wz+'</b>WiSoo</div></div>';
       var B=DB.board().slice().sort(function(x,y){return y.p-x.p||String(x.n).localeCompare(String(y.n))});
@@ -170,8 +171,8 @@ function render(){
       h+='<a class="btn alt" href="/#portfolio">Watch event videos</a>';
     }
     if(tab==='profile'){
-      var pos2=DB.rank(me.code);
-      var B=[['First tap',true],['100 Barhams',me.barhams>=100],['Level: Player',me.aura>=200],['Level: Pro',me.aura>=500],['Top 10',!!pos2],['Legend',me.aura>=1000]];
+      var pos2=trank();
+      var B=[['First tap',true],['100 Barhams',me.barhams>=100],['Level: Player',me.aura>=200],['Level: Pro',me.aura>=500],['Top 10 team',!!pos2&&pos2<=10],['Legend',me.aura>=1000]];
       h+='<div class="card"><div class="mut">PLAYER</div><div class="row"><div class="nm">Name</div><div class="v">'+esc(me.nick)+'</div></div><div class="row"><div class="nm">Team</div><div class="v">'+me.team+'</div></div><div class="row"><div class="nm">Wristband</div><div class="v">'+me.code+'</div></div></div>';
       h+='<h2>BADGES</h2><div class="card"><div class="badges">'+B.map(function(b){return'<div class="badge'+(b[1]?'':' lock')+'">'+(b[1]?'&#9989; ':'&#128274; ')+b[0]+'</div>'}).join('')+'</div></div>';
       h+='<div class="card mut">Privacy: your wristband stores only a code. Your player name, Barhams and Aura Score are shown to other players. Only the organizers can change your name.</div>';
