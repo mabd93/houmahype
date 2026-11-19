@@ -46,6 +46,9 @@ async function claimAccount(db, auth, data, opt) {
   const code = cleanCode(data.code), password = String(data.password || '');
   if (!/^[A-Z0-9-]{3,12}$/.test(code)) throw new Fail('invalid-argument', 'Type the code printed on your wristband.');
   if (password.length < MIN_PASSWORD) throw new Fail('invalid-argument', 'Your password needs at least ' + MIN_PASSWORD + ' characters.');
+  const phone = String(data.phone || '').replace(/[\s().-]/g, ''), contactEmail = String(data.email || '').trim().toLowerCase();
+  if (!/^\+?[0-9]{8,15}$/.test(phone)) throw new Fail('invalid-argument', 'Type your phone number (digits only, 8 to 15).');
+  if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(contactEmail) || contactEmail.length > 120) throw new Fail('invalid-argument', 'Type a valid email address.');
   if (!(await db.collection('players').doc(code).get()).exists) throw new Fail('not-found', 'This wristband code does not exist.');
   await checkActivation(db, code, data.activation, now);
   const ev = await eventId(db);
@@ -58,7 +61,7 @@ async function claimAccount(db, auth, data, opt) {
       tx.update(sRef, { uid: user.uid, claimedAt: now, fails: 0, lockUntil: 0 });
       tx.set(db.collection('players_private').doc(code), { uid: user.uid, linked: true }, { merge: true });
       tx.set(db.collection('players').doc(code), { mid: memberId }, { merge: true });
-      tx.set(db.collection('members').doc(user.uid), { memberId, email, createdAt: now, codes: { [ev]: code }, events: {} });
+      tx.set(db.collection('members').doc(user.uid), { memberId, email, phone, contactEmail, createdAt: now, codes: { [ev]: code }, events: {} });
     });
   } catch (e) { await auth.deleteUser(user.uid).catch(() => {}); throw e; }
   return { memberId, email };

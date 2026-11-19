@@ -20,31 +20,33 @@ const rejects = (p, code) => assert.rejects(p, e => e instanceof core.Fail && e.
 
 test('activation: right code creates the account and links the wristband', async () => {
   const db = setup(), auth = fakeAuth();
-  const r = await A.claimAccount(db, auth, { code: 'm001', activation: '123 456', password: 'longenough' });
+  const r = await A.claimAccount(db, auth, { code: 'm001', activation: '123 456', password: 'longenough', phone: '01012345678', email: 'a@b.co' });
   assert.match(r.memberId, /^[a-z0-9]{8}$/); assert.equal(auth.users.size, 1);
   const uid = [...auth.users.keys()][0];
   assert.equal(db.get('players_private/M001').uid, uid); assert.equal(db.get('players_private/M001').linked, true);
   assert.equal(db.get('players/M001').mid, r.memberId);
   assert.equal(db.get('members/' + uid).codes.event4, 'M001');
   assert.equal(db.get('players_private/M001').name, 'Name M001');   // merge kept the private details
-  await rejects(A.claimAccount(db, auth, { code: 'M001', activation: '123456', password: 'longenough' }), 'already-exists');
+  await rejects(A.claimAccount(db, auth, { code: 'M001', activation: '123456', password: 'longenough', phone: '01012345678', email: 'a@b.co' }), 'already-exists');
 });
 
 test('wrong activation codes are counted and lock after 5 tries; short passwords and unknown codes are refused', async () => {
   const db = setup(), auth = fakeAuth(), now = 1000;
-  for (let i = 0; i < 4; i++) await rejects(A.claimAccount(db, auth, { code: 'M002', activation: '000000', password: 'longenough' }, { now }), 'permission-denied');
-  await rejects(A.claimAccount(db, auth, { code: 'M002', activation: '000000', password: 'longenough' }, { now }), 'permission-denied'); // 5th: locks
-  await rejects(A.claimAccount(db, auth, { code: 'M002', activation: '123456', password: 'longenough' }, { now: now + 1000 }), 'resource-exhausted'); // even the right code is refused while locked
-  const ok = await A.claimAccount(db, auth, { code: 'M002', activation: '123456', password: 'longenough' }, { now: now + 16 * 60 * 1000 });
+  for (let i = 0; i < 4; i++) await rejects(A.claimAccount(db, auth, { code: 'M002', activation: '000000', password: 'longenough', phone: '01012345678', email: 'a@b.co' }, { now }), 'permission-denied');
+  await rejects(A.claimAccount(db, auth, { code: 'M002', activation: '000000', password: 'longenough', phone: '01012345678', email: 'a@b.co' }, { now }), 'permission-denied'); // 5th: locks
+  await rejects(A.claimAccount(db, auth, { code: 'M002', activation: '123456', password: 'longenough', phone: '01012345678', email: 'a@b.co' }, { now: now + 1000 }), 'resource-exhausted'); // even the right code is refused while locked
+  const ok = await A.claimAccount(db, auth, { code: 'M002', activation: '123456', password: 'longenough', phone: '01012345678', email: 'a@b.co' }, { now: now + 16 * 60 * 1000 });
   assert.ok(ok.memberId);
-  await rejects(A.claimAccount(db, auth, { code: 'W001', activation: '123456', password: 'short' }), 'invalid-argument');
-  await rejects(A.claimAccount(db, auth, { code: 'X999', activation: '123456', password: 'longenough' }), 'not-found');
+  await rejects(A.claimAccount(db, auth, { code: 'W001', activation: '123456', password: 'short', phone: '01012345678', email: 'a@b.co' }), 'invalid-argument');
+  await rejects(A.claimAccount(db, auth, { code: 'W001', activation: '123456', password: 'longenough', phone: '12', email: 'a@b.co' }), 'invalid-argument');
+  await rejects(A.claimAccount(db, auth, { code: 'W001', activation: '123456', password: 'longenough', phone: '01012345678', email: 'nope' }), 'invalid-argument');
+  await rejects(A.claimAccount(db, auth, { code: 'X999', activation: '123456', password: 'longenough', phone: '01012345678', email: 'a@b.co' }), 'not-found');
   assert.equal(auth.users.size, 1);
 });
 
 test('later event: the same account links a new wristband; points add up after closeEvent', async () => {
   const db = setup(), auth = fakeAuth();
-  await A.claimAccount(db, auth, { code: 'M001', activation: '123456', password: 'longenough' });
+  await A.claimAccount(db, auth, { code: 'M001', activation: '123456', password: 'longenough', phone: '01012345678', email: 'a@b.co' });
   const uid = [...auth.users.keys()][0];
   db.put('meta/leaderboard', { teams: [{ k: 'MaZoo|T1', p: 120 }, { k: 'WiSoo|T9', p: 150 }] });
   const r = await A.closeEvent(db, 'full', {});
