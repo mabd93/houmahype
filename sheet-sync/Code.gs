@@ -29,6 +29,7 @@ function onOpen() {
     .addSeparator()
     .addItem('Create Matches tab (pairings)', 'createMatchesTab')
       .addItem('Create activation codes', 'createActivationCodes')
+    .addItem('Apply changed Starting Barhams', 'applyStartingBarhams')
     .addItem('Install 5-minute trigger', 'installTrigger')
     .addItem('Remove 5-minute trigger', 'removeTrigger')
     .addToUi();
@@ -329,6 +330,35 @@ function listExisting_() {
     token = r.nextPageToken || '';
   } while (token);
   return out;
+}
+
+/* ---------- apply changed Starting Barhams (before any bracelet is used) ---------- */
+
+function applyStartingBarhams() {
+  var props = PropertiesService.getScriptProperties();
+  var held = Number(props.getProperty('SB_LOCK') || 0);
+  if (held && Date.now() - held < 90000) throw new Error('Another run is in progress. Try again in a minute.');
+  props.setProperty('SB_LOCK', String(Date.now()));
+  try {
+    var state = JSON.parse(props.getProperty('PLAYER_STATE') || '{}');
+    var changed = [], skipped = [], writes = [];
+    readPlayers_().forEach(function (p) {
+      var st = state[p.code];
+      if (!st || st.s === p.start) return;
+      var d = fetch_(API + '/players/' + p.code, 'get');
+      var tx = (d.fields && d.fields.tx && d.fields.tx.arrayValue && d.fields.tx.arrayValue.values) || [];
+      var onlyStart = tx.length === 0 || (tx.length === 1 && tx[0].mapValue && tx[0].mapValue.fields.t.stringValue === 'Starting Barhams');
+      if (!onlyStart) { skipped.push(p.code); return; } // player already has activity: never touch the balance
+      var upd = { barhams: p.start, tx: p.start > 0 ? [{ t: 'Starting Barhams', d: p.start, ts: Date.now() }] : [] };
+      writes.push({ update: { name: DOCS + '/players/' + p.code, fields: fields_(upd) }, updateMask: { fieldPaths: ['barhams', 'tx'] }, currentDocument: { updateTime: d.updateTime } });
+      changed.push({ code: p.code, from: st.s, to: p.start });
+    });
+    for (var i = 0; i < writes.length; i += 100) commit_(writes.slice(i, i + 100));
+    var fresh = JSON.parse(props.getProperty('PLAYER_STATE') || '{}');
+    changed.forEach(function (c) { if (fresh[c.code]) fresh[c.code].s = c.to; });
+    props.setProperty('PLAYER_STATE', JSON.stringify(fresh));
+    log_('Applied changed Starting Barhams to ' + changed.length + ' players: ' + changed.map(function (c) { return c.code + ' ' + c.from + '>' + c.to; }).join(', ') + (skipped.length ? '. Skipped (already has activity): ' + skipped.join(', ') : '') + '.');
+  } finally { props.deleteProperty('SB_LOCK'); }
 }
 
 /* ---------- staff ---------- */
