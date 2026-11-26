@@ -63,10 +63,11 @@ function syncNow() {
   var pr = syncPrices_();
   var mt = syncMatches_();
   var ec = syncEvent_();
+  var sn = syncStations_();
   var ac = syncActivation_();
   var msg = 'Sync now. Players: ' + p.create + ' created, ' + p.update + ' updated, ' + p.same + ' unchanged. Staff directory: ' + st.dir +
     ', logins linked: ' + st.linked + ', logins removed: ' + st.removed + (st.noAccount.length ? ', no account yet for: ' + st.noAccount.join(', ') : '') +
-    '. Prices: ' + pr.items + ' items, ' + pr.rules + ' rules. ' + mt.text + ' ' + ec + ' Activation codes created: ' + ac.n + '.';
+    '. Prices: ' + pr.items + ' items, ' + pr.rules + ' rules. ' + mt.text + ' ' + ec + ' ' + sn + ' Activation codes created: ' + ac.n + '.';
   log_(msg);
   toast_(msg);
 }
@@ -247,11 +248,32 @@ function syncMatches_() {
     seen[id] = true;
     writes.push({ update: { name: DOCS + '/schedule/' + id, fields: fields_({ round: r.round, station: r.station, teamA: a, teamB: b, teams: [a, b], nameA: r.a, nameB: r.b }) } });
   });
-  if (Object.keys(m.fixed).length) writes.push({ update: { name: DOCS + '/meta/gamepoints', fields: fields_({ fixed: m.fixed, max: 1000 }) } });
   for (var i = 0; i < writes.length; i += 400) commit_(writes.slice(i, i + 400));
   var rounds = {}; m.rows.forEach(function (r) { rounds[r.round] = (rounds[r.round] || 0) + 1; });
   return { count: m.rows.length, text: 'Matches: ' + m.rows.length + ' games in ' + Object.keys(rounds).length + ' rounds' +
     (problems.length ? '. CHECK: ' + problems.slice(0, 8).join('; ') + (problems.length > 8 ? '; ...' : '') : '') + '.' };
+}
+
+/* ---------- stations ----------
+ * Tab "Stations": A number, B name, D scoring type ("Not scored" = no points), G highest score one team can get, J Arabic name, K skill, L where.
+ * Written to meta/stations (shown in the student app) and meta/gamepoints (the score limit the server enforces per station).
+ */
+function syncStations_() {
+  var s = SpreadsheetApp.getActive().getSheetByName('Stations');
+  if (!s || s.getLastRow() < 2) return 'Stations: tab missing or empty.';
+  var list = [], limits = {};
+  s.getRange(2, 1, s.getLastRow() - 1, 12).getValues().forEach(function (r) {
+    var name = String(r[1]).trim(); if (!name) return;
+    var scored = String(r[3]).trim().toLowerCase() !== 'not scored';
+    var max = Math.round(Number(r[6])) || 15;
+    list.push({ n: Number(r[0]) || 0, name: name, ar: String(r[9] || '').trim(), skill: String(r[10] || '').trim(), where: String(r[11] || '').trim(), max: scored ? max : 0, scored: scored });
+    if (scored) limits[slug_(name)] = max;
+  });
+  commit_([
+    { update: { name: DOCS + '/meta/stations', fields: fields_({ list: list }) } },
+    { update: { name: DOCS + '/meta/gamepoints', fields: fields_({ max: 15, limits: limits }) } }
+  ]);
+  return 'Stations: ' + list.length + ' (' + Object.keys(limits).length + ' scored).';
 }
 
 /* ---------- players ---------- */

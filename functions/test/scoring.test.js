@@ -10,9 +10,10 @@ function world(nGames) {
   for (let i = 1; i <= nGames; i++) games.push({ station: 'S' + i, teamA: S.teamKey('MaZoo', 'T' + i), teamB: S.teamKey('WiSoo', 'T' + i), result: null, winner: null, amount: 0 });
   return { rosters, games };
 }
-function decide(games, winners, amount) { // winners: string of M / W / D per game
-  return games.map((g, i) => winners[i] === 'D' ? Object.assign({}, g, { result: 'draw', winner: null, amount: 0 })
-    : Object.assign({}, g, { result: 'win', winner: winners[i] === 'M' ? g.teamA : g.teamB, amount: amount || 10 }));
+function decide(games, winners, amount) { // winners: string of M / W / D per game; the winner scores `amount`, the other team 2 (draw: both 2)
+  const hi = amount || 10;
+  return games.map((g, i) => winners[i] === 'D' ? Object.assign({}, g, { result: 'draw', winner: null, scoreA: 2, scoreB: 2 })
+    : Object.assign({}, g, { result: 'win', winner: winners[i] === 'M' ? g.teamA : g.teamB, scoreA: winners[i] === 'M' ? hi : 2, scoreB: winners[i] === 'M' ? 2 : hi }));
 }
 
 test('incomplete round awards nothing', () => {
@@ -20,14 +21,14 @@ test('incomplete round awards nothing', () => {
   const r = S.computeRound({ games: g, rosters: w.rosters });
   assert.equal(r.complete, false); assert.deepEqual(r.awards, {});
 });
-test('winner team: all 5 players get the points once, loser nothing, camp bonus to the whole winning camp', () => {
+test('every team gets its own score, the winning camp gets the bonus on top', () => {
   const w = world(3); const r = S.computeRound({ games: decide(w.games, 'MMW', 10), rosters: w.rosters });
   assert.equal(r.winnerCamp, 'MaZoo'); assert.equal(r.bonus, 1); assert.equal(r.tie, false);
-  assert.equal(r.awards['M1-1'], 11); assert.equal(r.awards['M2-5'], 11); // won + bonus 1
-  assert.equal(r.awards['M3-1'], 1);   // lost its game, still gets the camp bonus
+  assert.equal(r.awards['M1-1'], 11); assert.equal(r.awards['M2-5'], 11); // score 10 + bonus 1
+  assert.equal(r.awards['W1-1'], 2);   // lost but keeps its own score of 2
+  assert.equal(r.awards['M3-1'], 3);   // score 2 + bonus 1
   assert.equal(r.awards['M4-1'], 1);   // resting MaZoo team gets the bonus too
   assert.equal(r.awards['W3-1'], 10);  // WiSoo team that won its game, no bonus
-  assert.equal(r.awards['W1-1'], undefined);
   assert.equal(r.teamPoints[S.teamKey('MaZoo', 'T1')], 11);
 });
 test('bonus grows with each round the camp wins: M, M, W, M -> 1, 2, 1, 3', () => {
@@ -35,15 +36,18 @@ test('bonus grows with each round the camp wins: M, M, W, M -> 1, 2, 1, 3', () =
   const res = S.computeSeason(rounds);
   assert.deepEqual(res.map(r => [r.winnerCamp, r.bonus]), [['MaZoo', 1], ['MaZoo', 2], ['WiSoo', 1], ['MaZoo', 3]]);
 });
-test('tied round: no bonus and the win points swap to the losing team of every game', () => {
+test('tied round: no camp bonus, nothing swaps, every team keeps its own score', () => {
   const w = world(4); const r = S.computeRound({ games: decide(w.games, 'MMWW', 10), rosters: w.rosters });
   assert.equal(r.tie, true); assert.equal(r.bonus, 0); assert.equal(r.winnerCamp, null);
-  assert.equal(r.awards['W1-1'], 10); assert.equal(r.awards['M1-1'], undefined); // M won game 1, W team gets the points
-  assert.equal(r.awards['M3-1'], 10); assert.equal(r.awards['W3-1'], undefined); // W won game 3, M team gets the points
+  assert.equal(r.awards['M1-1'], 10); assert.equal(r.awards['W1-1'], 2);
+  assert.equal(r.awards['W3-1'], 10); assert.equal(r.awards['M3-1'], 2);
 });
-test('a draw gives nobody points and a tied round does not count as a camp win', () => {
+test('a draw counts for nobody but both teams keep their scores; a voided game gives nothing', () => {
   const w = world(3); const r = S.computeRound({ games: decide(w.games, 'MWD', 10), rosters: w.rosters });
-  assert.equal(r.tie, true); assert.equal(r.awards['M3-1'], undefined); assert.equal(r.awards['W3-1'], undefined);
+  assert.equal(r.tie, true); assert.equal(r.awards['M3-1'], 2); assert.equal(r.awards['W3-1'], 2);
+  const g = decide(w.games, 'MWD', 10); g[2] = Object.assign({}, g[2], { result: 'void', scoreA: 0, scoreB: 0 });
+  const v = S.computeRound({ games: g, rosters: w.rosters });
+  assert.equal(v.complete, true); assert.equal(v.awards['M3-1'], undefined);
   const s = S.computeSeason([{ round: 1, games: decide(w.games, 'MWD'), rosters: w.rosters }, { round: 2, games: decide(w.games, 'MMW'), rosters: w.rosters }]);
   assert.equal(s[1].bonus, 1); // tied round 1 did not count as a win for anybody
 });

@@ -26,7 +26,7 @@ a{color:var(--yl)}
     <div class="row"><div id="count" style="font-weight:800"></div><div class="mut" id="age"></div></div>
     <div id="sum" class="mut" style="margin-top:6px"></div>
   </div>
-  <div id="adm" class="card hidden"><div class="mut">Full staff: points used when you set a winner</div><input id="amt" type="number" inputmode="numeric" min="1" placeholder="points"></div>
+  
   <div id="list"></div>
 </div>
 <script>
@@ -41,7 +41,7 @@ function init(){firebase.initializeApp(window.HH_FIREBASE);db=firebase.firestore
   auth.onAuthStateChanged(function(u){if(!u){$('login').classList.remove('hidden');$('main').classList.add('hidden');return}
     db.collection('staff').doc(u.uid).get().then(function(d){if(!d.exists){$('login').classList.remove('hidden');return}
       me=d.data();full=(me.scope||'Full: Barhams and Score')==='Full: Barhams and Score';
-      $('adm').classList.toggle('hidden',!full);$('login').classList.add('hidden');$('main').classList.remove('hidden');
+      $('login').classList.add('hidden');$('main').classList.remove('hidden');
       db.collection('rounds').onSnapshot(function(q){rounds={};q.forEach(function(d){rounds[d.id]=d.data()});
         if(!started){started=true;var mx=0;Object.keys(rounds).forEach(function(k){if(rounds[k].closed&&+k>mx)mx=+k});rnd=Math.min(MAXR,mx+1);listen()}else render()},function(e){say('Cannot read rounds: '+e.code)})
     })})}
@@ -60,20 +60,22 @@ function render(){
   var last=0;rows.forEach(function(r){if(r.m&&r.m.ts>last)last=r.m.ts});
   $('age').textContent=last?('last result '+Math.max(0,Math.round((Date.now()-last)/60000))+' min ago'):'';
   var rd=rounds[rnd],sum='';
-  if(rd&&rd.closed){var w=rd.wins||{},ks=Object.keys(w);sum='Round closed. '+ks.map(function(k){return esc(k)+' '+w[k]}).join(' - ')+(rd.tie?'. TIED: win points were swapped, no camp bonus.':'. '+esc(rd.winnerCamp)+' wins the round: bonus +'+rd.bonus+' for every '+esc(rd.winnerCamp)+' player.')}
+  if(rd&&rd.closed){var w=rd.wins||{},ks=Object.keys(w);sum='Round closed. '+ks.map(function(k){return esc(k)+' '+w[k]}).join(' - ')+(rd.tie?'. TIED: no camp bonus this round.':'. '+esc(rd.winnerCamp)+' wins the round: bonus +'+rd.bonus+' for every '+esc(rd.winnerCamp)+' player.')}
   else if(n&&done===n)sum='All games recorded, closing the round...';
   else if(n)sum='Points for this round appear when every game is recorded. Missing games are listed first.';
   $('sum').innerHTML=sum;
   rows.sort(function(a,b){if(!a.m!==!b.m)return a.m?1:-1;return String(a.g.station).localeCompare(String(b.g.station),undefined,{numeric:true})});
   $('list').innerHTML=rows.map(function(r){var g=r.g,m=r.m;
     var tA='<span class="tag t-m">'+esc(camp(g.teamA))+'</span> '+esc(g.nameA),tB='<span class="tag t-w">'+esc(camp(g.teamB))+'</span> '+esc(g.nameB);
-    var st=!m?'NOT SCANNED YET':(m.result==='draw'?'No result':esc(m.winnerName)+' ('+esc(camp(m.winner))+') won'+(m.amount?' · '+m.amount+' pts':''));
+    var st=!m?'NOT SCANNED YET':(m.result==='void'?'No result':esc(m.nameA)+' '+m.scoreA+' - '+m.scoreB+' '+esc(m.nameB)+(m.result==='draw'?' (draw)':' · '+esc(m.winnerName)+' wins'));
     var btn='';
-    if(full)btn='<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap"><button class="gn" onclick="setW(\''+esc(g.station).replace(/'/g,"\\'")+'\',\'A\')">'+esc(camp(g.teamA))+' wins</button><button class="gn" onclick="setW(\''+esc(g.station).replace(/'/g,"\\'")+'\',\'B\')">'+esc(camp(g.teamB))+' wins</button><button class="gh" onclick="noRes(\''+esc(g.station).replace(/'/g,"\\'")+'\')">No result</button></div>';
+    var q=esc(g.station).replace(/'/g,"\\'");
+    if(full)btn='<div style="margin-top:8px;display:flex;gap:6px;flex-wrap:wrap"><button class="gn" onclick="setS(\''+q+'\')">'+(m?'Correct scores':'Enter scores')+'</button><button class="gh" onclick="noRes(\''+q+'\')">No result</button></div>';
     return'<div class="card '+(m?'done':'miss')+'"><div class="row"><b>'+esc(g.station)+'</b><span class="st" style="font-weight:800">'+st+'</span></div><div class="mut" style="margin-top:4px">'+tA+' &nbsp;vs&nbsp; '+tB+'</div>'+btn+'</div>'}).join('')}
 function call(action,station,extra){return fns.httpsCallable('adminMatch')(Object.assign({action:action,round:rnd,station:station},extra||{})).then(function(){say('Saved. Points were recomputed.',true)}).catch(function(e){say(e.message||'Failed')})}
-function setW(st,w){var a=Math.round(+$('amt').value);if(!a||a<1){say('Type the points first');return}
-  if(confirm('Set the winner of '+st+' (round '+rnd+') and recompute all points affected?'))call('set',st,{winner:w,amount:a})}
+function setS(st){var a=prompt('Score of the MaZoo team at '+st+' (round '+rnd+')');if(a===null)return;var b=prompt('Score of the WiSoo team');if(b===null)return;
+  a=Math.round(+a);b=Math.round(+b);if(isNaN(a)||isNaN(b)||a<0||b<0){say('Scores must be whole numbers, 0 or more');return}
+  call('set',st,{scoreA:a,scoreB:b})}
 function noRes(st){if(confirm('Mark '+st+' (round '+rnd+') as NO RESULT? Nobody gets points for it.'))call('noresult',st)}
 setInterval(function(){if(started)render()},30000);
 </script></body></html>

@@ -5,15 +5,15 @@
  *
  * Data:
  *   schedule/{round}_{station}  fixed pairings from the sheet: { round, station, teamA, teamB, teams:[A,B], nameA, nameB }
- *   matches/{round}_{station}   one result per game: { result:'win'|'draw', winner, amount, ... }  (created once)
+ *   matches/{round}_{station}   one result per game: { result:'win'|'draw'|'void', winner, scoreA, scoreB, ... }  (created once)
  *   rounds/{round}              written when a round is complete: the awards that were applied (so they can be reversed exactly)
- *   meta/gamepoints             optional: { max: 1000, fixed: { "<station slug>": 100 } }
+ *   meta/gamepoints             optional: { max: 15, limits: { "<station slug>": 15 } }  (highest score one team can get at a station)
  */
 const S = require('./scoring');
 
 class Fail extends Error { constructor(code, message) { super(message); this.code = code; } }
 const FULL = 'Full: Barhams and Score';
-const DEFAULT_MAX = 1000; // safety cap for one game's points, can be changed in meta/gamepoints
+const DEFAULT_MAX = 15; // highest score one team can get in a game, can be changed per station in meta/gamepoints
 
 async function staffOf(db, uid) {
   if (!uid) throw new Fail('unauthenticated', 'Sign in first.');
@@ -26,18 +26,24 @@ const isFull = s => s.scope === FULL;
 const canRecord = s => s.scope === FULL || s.scope === 'Score only' || (s.scope === 'Own station only' && s.role === 'Game Leader');
 const gameId = (round, station) => round + '_' + S.slug(station);
 
-function checkAmount(n, max) {
-  if (!Number.isInteger(n) || n < 1) throw new Fail('invalid-argument', 'Points must be a whole number of 1 or more.');
-  if (n > max) throw new Fail('invalid-argument', 'Points are capped at ' + max + ' per game.');
+function limitFor(cfg, station) {
+  const own = cfg && cfg.limits && cfg.limits[S.slug(station)];
+  if (Number.isInteger(own) && own > 0) return own;
+  return (cfg && Number.isInteger(cfg.max) && cfg.max > 0) ? cfg.max : DEFAULT_MAX;
+}
+function checkScore(v, max, label) {
+  const n = typeof v === 'string' && v.trim() !== '' ? Number(v) : v;
+  if (!Number.isInteger(n) || n < 0) throw new Fail('invalid-argument', label + ' must be a whole number of 0 or more.');
+  if (n > max) throw new Fail('invalid-argument', label + ' is capped at ' + max + ' for this station.');
   return n;
 }
-function amountFor(cfg, station, typed) {
-  const max = (cfg && Number.isInteger(cfg.max)) ? cfg.max : DEFAULT_MAX;
-  const fixed = cfg && cfg.fixed && cfg.fixed[S.slug(station)];
-  return Number.isInteger(fixed) ? checkAmount(fixed, max) : checkAmount(typed, max);
+function outcome(scoreA, scoreB, g) {
+  if (scoreA === scoreB) return { result: 'draw', winner: null, winnerName: null };
+  const a = scoreA > scoreB;
+  return { result: 'win', winner: a ? g.teamA : g.teamB, winnerName: a ? g.nameA : g.nameB };
 }
 
-/* A game leader (or Full staff) records the winner by scanning ANY player of the winning team. */
+/* A game leader (or Full staff) scans ANY player of either team at the station, then enters each team's own score (A = MaZoo team, B = WiSoo team). */
 async function recordMatch(db, uid, data) {
   const st = await staffOf(db, uid);
   if (!canRecord(st)) throw new Fail('permission-denied', 'Your role cannot give team points.');
@@ -46,8 +52,7 @@ async function recordMatch(db, uid, data) {
   const leader = !(isFull(st) || st.scope === 'Score only');
   const station = leader ? st.station : String(data.station || st.station || '').trim();
   if (!station) throw new Fail('invalid-argument', leader ? 'Your account has no station in the Staff sheet.' : 'Type the station.');
-  const draw = data.result === 'draw';
-  if (draw && !isFull(st)) throw new Fail('permission-denied', 'Only Full staff can record a draw.');
+  const lookup = data.lookup === true;
 
   const out = await db.runTransaction(async tx => {
     const pSnap = await tx.get(db.collection('players').doc(code));
@@ -65,19 +70,22 @@ async function recordMatch(db, uid, data) {
     const mSnap = await tx.get(mRef);
     const rSnap = await tx.get(db.collection('rounds').doc(String(g.round)));
     const cSnap = await tx.get(db.collection('meta').doc('gamepoints'));
-    const winnerName = key === g.teamA ? g.nameA : g.nameB;
+    const max = limitFor(cSnap.exists ? cSnap.data() : null, g.station);
+    const info = { round: g.round, station: g.station, nameA: g.nameA, nameB: g.nameB, max: max };
     if (mSnap.exists) {
       const m = mSnap.data();
-      return { status: 'already', round: g.round, station: g.station, result: m.result, winner: m.winnerName || null };
+      return Object.assign(info, { status: 'already', result: m.result, winner: m.winnerName || null, scoreA: m.scoreA, scoreB: m.scoreB });
     }
     if (rSnap.exists && rSnap.data().closed) throw new Fail('failed-precondition', 'Round ' + g.round + ' is closed. Ask Full staff to correct it.');
-    const amount = draw ? 0 : amountFor(cSnap.exists ? cSnap.data() : null, g.station, Number(data.amount));
+    if (lookup) return Object.assign(info, { status: 'open' });
+    const scoreA = checkScore(data.scoreA, max, 'Score of ' + g.nameA), scoreB = checkScore(data.scoreB, max, 'Score of ' + g.nameB);
+    const o = outcome(scoreA, scoreB, g);
     tx.set(mRef, {
       round: g.round, station: g.station, teamA: g.teamA, teamB: g.teamB, nameA: g.nameA, nameB: g.nameB,
-      result: draw ? 'draw' : 'win', winner: draw ? null : key, winnerName: draw ? null : winnerName, amount: amount,
+      result: o.result, winner: o.winner, winnerName: o.winnerName, scoreA: scoreA, scoreB: scoreB,
       by: st.id, byName: st.name, ts: Date.now()
     });
-    return { status: 'recorded', round: g.round, station: g.station, result: draw ? 'draw' : 'win', winner: draw ? null : winnerName, amount: amount };
+    return Object.assign(info, { status: 'recorded', result: o.result, winner: o.winnerName, scoreA: scoreA, scoreB: scoreB });
   });
 
   if (out.status === 'recorded') out.round_state = await settleRound(db, out.round, 'auto');
@@ -102,11 +110,11 @@ async function adminMatch(db, uid, data) {
     const cSnap = await tx.get(db.collection('meta').doc('gamepoints'));
     let doc;
     if (action === 'noresult') {
-      doc = { result: 'draw', winner: null, winnerName: null, amount: 0 };
+      doc = { result: 'void', winner: null, winnerName: null, scoreA: 0, scoreB: 0 };
     } else {
-      if (data.winner !== 'A' && data.winner !== 'B') throw new Fail('invalid-argument', 'Choose winner A or B.');
-      const key = data.winner === 'A' ? g.teamA : g.teamB;
-      doc = { result: 'win', winner: key, winnerName: data.winner === 'A' ? g.nameA : g.nameB, amount: amountFor(cSnap.exists ? cSnap.data() : null, g.station, Number(data.amount)) };
+      const max = limitFor(cSnap.exists ? cSnap.data() : null, g.station);
+      const scoreA = checkScore(data.scoreA, max, 'Score of ' + g.nameA), scoreB = checkScore(data.scoreB, max, 'Score of ' + g.nameB);
+      doc = Object.assign({ scoreA: scoreA, scoreB: scoreB }, outcome(scoreA, scoreB, g));
     }
     tx.set(mRef, Object.assign({ round: g.round, station: g.station, teamA: g.teamA, teamB: g.teamB, nameA: g.nameA, nameB: g.nameB,
       by: st.id, byName: st.name, ts: Date.now(), corrected: true }, doc));
@@ -142,7 +150,7 @@ async function settleRound(db, round, reason) {
     ms.docs.forEach(d => { mById[d.id] = d.data(); });
     const games = sch.docs.map(d => d.data()).map(g => {
       const m = mById[gameId(g.round, g.station)];
-      return { station: g.station, teamA: g.teamA, teamB: g.teamB, result: m ? m.result : null, winner: m ? m.winner : null, amount: m ? m.amount : 0 };
+      return { station: g.station, teamA: g.teamA, teamB: g.teamB, result: m ? m.result : null, winner: m ? m.winner : null, scoreA: m ? m.scoreA : 0, scoreB: m ? m.scoreB : 0 };
     });
     if (!games.length) return { closed: false, missing: [], note: 'No schedule for this round.' };
 
@@ -173,7 +181,7 @@ async function settleRound(db, round, reason) {
       if (old && old.closed) entries.push({ t: label, d: delta[code], ts: now, by: 'system' });
       else {
         const det = res.detail[code] || {};
-        if (det.game) entries.push({ t: (res.tie ? 'Round ' + round + ' swap (tied round)' : 'Round ' + round + ' win') + (det.station ? ' - ' + det.station : ''), d: det.game, ts: now, by: 'system' });
+        if (det.game) entries.push({ t: 'Round ' + round + (det.station ? ' - ' + det.station : ' score'), d: det.game, ts: now, by: 'system' });
         if (det.bonus) entries.push({ t: 'Round ' + round + ' camp bonus', d: det.bonus, ts: now, by: 'system' });
       }
       tx.update(d.ref, { aura: (p.aura || 0) + delta[code], tx: entries.reverse().concat(p.tx || []).slice(0, 20) });

@@ -42,11 +42,15 @@ button.rd{background:var(--rd)}button.gn{background:var(--gn);color:#042}button.
 
   <div id="act" class="hidden">
     <div id="tw"><h2>2. TEAM WIN</h2><div class="card">
-      <div class="mut">Scan or open ANY player of the winning team. The whole team gets the points once. Scanning the same team again, or the other team, adds nothing.</div>
+      <div class="mut">Scan or open ANY player of either team at your station, press Find this game, then type each team's own score. Every player of a team gets its score once. The higher score wins the round for its camp.</div>
       <div id="twinfo" style="margin:6px 0;font-weight:700"></div>
       <input id="twst" placeholder="Station (as in the Staff sheet), e.g. Station 4" class="hidden">
-      <input id="twamt" type="number" inputmode="numeric" min="1" placeholder="Points for the winning team">
-      <button class="gn" style="width:100%" id="twbtn" onclick="teamWin()">Give the whole team the win</button>
+      <button class="gh" style="width:100%" id="twfind" onclick="twLook()">Find this game</button>
+      <div id="twsc" class="hidden">
+        <div class="mut" id="twla">Team A</div><input id="twa" type="number" inputmode="numeric" min="0" placeholder="Score">
+        <div class="mut" id="twlb">Team B</div><input id="twb" type="number" inputmode="numeric" min="0" placeholder="Score">
+        <button class="gn" style="width:100%" id="twbtn" onclick="teamWin()">Save both scores</button>
+      </div>
     </div></div>
     <h2>2. BARHAMS</h2><div class="card"><div class="grid" id="bpl"></div><div class="grid" id="bmi" style="margin-top:8px"></div>
       <div id="bcust" class="hidden" style="margin-top:10px"><div class="mut">Custom amount</div><input id="bcv" type="number" inputmode="numeric" min="1" placeholder="e.g. 35"><div class="two"><button class="gn" onclick="custom('b',1)">Add</button><button class="rd" onclick="custom('b',-1)">Deduct</button></div></div></div>
@@ -123,13 +127,21 @@ function add(kind,n){if(!cur){say('Open a player first');return}
     if(applied)tx.set(db.collection('log').doc(),{by:me.id||auth.currentUser.uid,code:cur,kind:kind==='b'?'barhams':'aura',d:applied,why:label,ts:Date.now()});
     if(kind==='a'&&applied){var inc={};inc[p.team]=firebase.firestore.FieldValue.increment(applied);tx.set(tref,inc,{merge:true})}
     return Object.assign({},p,upd)})}).then(function(p){show(p);say((n>0?'+':'')+n+(kind==='b'?' Barhams':' Aura')+' done',true)}).catch(function(e){say('Failed: '+(e.code||e.message))})}
+function twData(extra){var d={code:cur};if(!isGL){var st=$('twst').value.trim();if(!st){say('Type the station');return null}d.station=st}return Object.assign(d,extra||{})}
+function twLook(){if(!cur){say('Open a player first');return}var d=twData({lookup:true});if(!d)return;
+  fns.httpsCallable('recordMatch')(d).then(function(r){var x=r.data;
+    if(x.status==='already'){$('twsc').classList.add('hidden');$('twinfo').textContent='Already scored: '+x.nameA+' '+x.scoreA+' - '+x.scoreB+' '+x.nameB+'. Ask Full staff to correct it.';return}
+    $('twinfo').textContent='Round '+x.round+' - '+x.station+': '+x.nameA+' vs '+x.nameB+' (max '+x.max+' each)';
+    $('twla').textContent='Score of '+x.nameA+' (MaZoo)';$('twlb').textContent='Score of '+x.nameB+' (WiSoo)';
+    $('twa').max=x.max;$('twb').max=x.max;$('twa').value='';$('twb').value='';$('twsc').classList.remove('hidden');
+  }).catch(function(e){$('twsc').classList.add('hidden');say(e.message||'Failed')})}
 function teamWin(){if(!cur){say('Open a player first');return}
-  var amt=Math.round(+$('twamt').value);if(!amt||amt<1){say('Type the points for the winning team');return}
-  var d={code:cur,amount:amt};if(!isGL){var st=$('twst').value.trim();if(!st){say('Type the station');return}d.station=st}
+  var a=$('twa').value,b=$('twb').value;if(a===''||b===''){say('Type both scores');return}
+  var d=twData({scoreA:Math.round(+a),scoreB:Math.round(+b)});if(!d)return;
   $('twbtn').disabled=true;
   fns.httpsCallable('recordMatch')(d).then(function(r){var x=r.data;
-    if(x.status==='already')say('Already scored: '+x.winner+' won this game. Nothing was added.');
-    else say('Recorded: '+x.winner+' wins '+x.amount+' points (round '+x.round+', '+x.station+').'+(x.round_state&&x.round_state.closed?' Round complete.':''),true);
+    if(x.status==='already')say('Already scored: '+x.nameA+' '+x.scoreA+' - '+x.scoreB+' '+x.nameB+'. Nothing was added.');
+    else{say('Recorded: '+x.nameA+' '+x.scoreA+' - '+x.scoreB+' '+x.nameB+' (round '+x.round+', '+x.station+').'+(x.round_state&&x.round_state.closed?' Round complete.':''),true);$('twsc').classList.add('hidden');$('twinfo').textContent=''}
   }).catch(function(e){say(e.message||'Failed')}).then(function(){$('twbtn').disabled=false})}
 function scan(){if(!('NDEFReader' in window)){say('iPhone: just tap the band on the top of the phone and open the notification. Or type the code.');return}
   var r=new NDEFReader();r.scan().then(function(){say('Hold a wristband to the phone',true);r.onreading=function(e){var rec=e.message.records[0];if(!rec)return;var t=new TextDecoder().decode(rec.data),m=t.match(/[?&]w=([A-Za-z0-9-]+)/);var c=m?m[1]:t.trim();$('code').value=c.toUpperCase();load(c)}}).catch(function(e){say('NFC error: '+e.name)})}
