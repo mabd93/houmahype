@@ -248,9 +248,19 @@ function syncMatches_() {
     seen[id] = true;
     writes.push({ update: { name: DOCS + '/schedule/' + id, fields: fields_({ round: r.round, station: r.station, teamA: a, teamB: b, teams: [a, b], nameA: r.a, nameB: r.b }) } });
   });
+  // Remove schedule documents that are no longer in the Matches tab (a changed station name or an old plan would otherwise keep a round from closing).
+  var removed = 0, token = '';
+  do {
+    var lst = fetch_(API + '/schedule?pageSize=300&mask.fieldPaths=round' + (token ? '&pageToken=' + encodeURIComponent(token) : ''), 'get');
+    (lst.documents || []).forEach(function (d) {
+      var id = d.name.split('/').pop();
+      if (!seen[id]) { writes.push({ delete: d.name }); removed++; }
+    });
+    token = lst.nextPageToken || '';
+  } while (token);
   for (var i = 0; i < writes.length; i += 400) commit_(writes.slice(i, i + 400));
   var rounds = {}; m.rows.forEach(function (r) { rounds[r.round] = (rounds[r.round] || 0) + 1; });
-  return { count: m.rows.length, text: 'Matches: ' + m.rows.length + ' games in ' + Object.keys(rounds).length + ' rounds' +
+  return { count: m.rows.length, text: 'Matches: ' + m.rows.length + ' games in ' + Object.keys(rounds).length + ' rounds' + (removed ? ', ' + removed + ' old games removed' : '') +
     (problems.length ? '. CHECK: ' + problems.slice(0, 8).join('; ') + (problems.length > 8 ? '; ...' : '') : '') + '.' };
 }
 

@@ -222,16 +222,16 @@ function planHtml(){
   var board=DB.board(),k=me.team+'|'+me.teamName,mine=board.filter(function(t){return t.k===k})[0],hist={};
   ((mine&&mine.h)||[]).forEach(function(x){hist[x.r]=x});
   function who(r){var g=byR[r];if(!g)return null;var mineA=g.teamA===k;return{st:g.station,opp:mineA?g.nameB:g.nameA,oc:mineA?'WiSoo':'MaZoo'}}
-  function line(r){var w=who(r);return w?'Station <b>'+esc(w.st)+'</b> vs '+esc(w.opp):'<b>FUN ROUND</b> &middot; Break for Media or Afoosha (not scored)'}
+  function line(r){var w=who(r);return w?'Station <b>'+esc(w.st)+'</b> vs '+esc(w.opp):'<b>FUN ROUND</b> &middot; Break for Media (not scored)'}
   var mins=(now-st)/60000,idx=Math.floor(mins/slot),r=idx+1,into=mins-idx*slot,h='';
   if(mins<0){h+='<div class="go wait"><div class="k">EVENT STARTS AT '+hm(st)+'</div><div class="b">GET READY</div><div class="d">Round 1 &middot; '+line(1)+'</div></div>'}
   else if(r>N){h+='<div class="go wait"><div class="k">GAMES FINISHED</div><div class="b">WELL PLAYED</div><div class="d">Check the Aura Score tab for the final ranking.</div></div>'}
-  else if(into<play){h+='<div class="go play"><div class="k">NOW &middot; ROUND '+r+' OF '+N+'</div><div class="b">'+(who(r)?esc(who(r).st).toUpperCase():'FUN ROUND')+'</div><div class="d">'+(who(r)?'vs '+esc(who(r).opp)+' &middot; ':'Break for Media / Afoosha &middot; ')+Math.max(1,Math.ceil(play-into))+' min left</div></div>'
+  else if(into<play){h+='<div class="go play"><div class="k">NOW &middot; ROUND '+r+' OF '+N+'</div><div class="b">'+(who(r)?esc(who(r).st).toUpperCase():'FUN ROUND')+'</div><div class="d">'+(who(r)?'vs '+esc(who(r).opp)+' &middot; ':'Break for Media &middot; ')+Math.max(1,Math.ceil(play-into))+' min left</div></div>'
     +(r<N?'<div class="pl"><div class="t">NEXT &middot; ROUND '+(r+1)+' &middot; '+hm(st+r*slot*60000)+'</div><div class="o">'+line(r+1)+'</div></div>':'')}
-  else{h+='<div class="go move"><div class="k">MOVE NOW &middot; ROUND '+(r+1>N?'':(r+1)+' STARTS IN '+Math.max(1,Math.ceil(slot-into))+' MIN')+'</div><div class="b">'+(r+1>N?'GAMES FINISHED':(who(r+1)?'GO TO '+esc(who(r+1).st).toUpperCase():'FUN ROUND'))+'</div><div class="d">'+(r+1>N?'':(who(r+1)?'vs '+esc(who(r+1).opp):'Break for Media / Afoosha'))+'</div></div>'}
+  else{h+='<div class="go move"><div class="k">MOVE NOW &middot; ROUND '+(r+1>N?'':(r+1)+' STARTS IN '+Math.max(1,Math.ceil(slot-into))+' MIN')+'</div><div class="b">'+(r+1>N?'GAMES FINISHED':(who(r+1)?'GO TO '+esc(who(r+1).st).toUpperCase():'FUN ROUND'))+'</div><div class="d">'+(r+1>N?'':(who(r+1)?'vs '+esc(who(r+1).opp):'Break for Media'))+'</div></div>'}
   h+='<h2>YOUR TIMETABLE</h2>';
   for(var i=1;i<=N;i++){var w2=who(i),x=hist[i],cur=mins>=0&&i===r&&into<play;
-    h+='<div class="pl'+(cur?' now':'')+(w2?'':' brk')+'">'+(x?'<span class="g">+'+(x.g+x.b)+'</span>':'')+'<div class="t">ROUND '+i+' &middot; '+hm(st+(i-1)*slot*60000)+'</div><div class="s">'+(w2?esc(w2.st):'Fun round')+'</div><div class="o">'+(w2?'vs '+esc(w2.opp)+' <span class="mut">('+w2.oc+')</span>':'Break for Media / Afoosha (not scored)')+(x?' &middot; <span class="mut">game +'+x.g+(x.b?', camp bonus +'+x.b:'')+'</span>':'')+'</div></div>'}
+    h+='<div class="pl'+(cur?' now':'')+(w2?'':' brk')+'">'+(x?'<span class="g">+'+(x.g+x.b)+'</span>':'')+'<div class="t">ROUND '+i+' &middot; '+hm(st+(i-1)*slot*60000)+'</div><div class="s">'+(w2?esc(w2.st):'Fun round')+'</div><div class="o">'+(w2?'vs '+esc(w2.opp)+' <span class="mut">('+w2.oc+')</span>':'Break for Media (not scored)')+(x?' &middot; <span class="mut">game +'+x.g+(x.b?', camp bonus +'+x.b:'')+'</span>':'')+'</div></div>'}
   return h}
 function roundHistHtml(){var B=DB.board(),k=me.team+'|'+(me.teamName||''),t=B.filter(function(x){return x.k===k})[0],R=DB.rounds(),sum={};R.forEach(function(x){sum[x.r]=x});
   if(!t||!t.h||!t.h.length)return'';
